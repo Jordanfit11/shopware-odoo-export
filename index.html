@@ -116,6 +116,19 @@
         }
         .upload-zone:hover { background: #f8f9fa; border-color: #764ba2; }
         .upload-zone.has-file { border-color: #28a745; background: #d4edda; }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -192,15 +205,14 @@
                 <label for="statusFilter">📊 Statut (optionnel)</label>
                 <select id="statusFilter">
                     <option value="">Tous les statuts</option>
-                    <option value="0">0 - En attente / Open</option>
-                    <option value="1">1 - En cours</option>
-                    <option value="2">2 - Terminée / Complète</option>
-                    <option value="3">3 - Annulée</option>
-                    <option value="4">4 - Partiellement livrée</option>
-                    <option value="7">7 - Prête à expédier</option>
-                    <option value="-1">-1 - Brouillon</option>
+                    <option value="Open">Open (Ouvert)</option>
+                    <option value="Completely delivered">Completely delivered (Livré)</option>
+                    <option value="NOT IN USE-In process">En cours</option>
+                    <option value="NOT IN USE-Completed">Complété</option>
+                    <option value="NOT IN USE-Cancelled/rejected">Annulé</option>
+                    <option value="NOT IN USE-Ready for delivery">Prêt à livrer</option>
                 </select>
-                <small>Cliquez sur "Debug Statuts" pour voir les vrais statuts dans votre Shopware</small>
+                <small>💡 Utilisez "Debug Statuts" pour voir tous les statuts disponibles</small>
             </div>
 
             <button class="btn" onclick="exportShopware()" id="exportBtn">
@@ -266,6 +278,43 @@
             <button class="btn" onclick="downloadExcel()">
                 📥 Télécharger Excel
             </button>
+        </div>
+
+        <!-- Import Odoo -->
+        <div class="section hidden" id="importSection">
+            <h2>📥 Import direct dans Odoo (optionnel)</h2>
+            
+            <div class="form-group">
+                <label for="odooUrl">URL Odoo</label>
+                <input type="text" id="odooUrl" placeholder="https://votre-odoo.odoo.com">
+            </div>
+
+            <div class="form-group">
+                <label for="odooDb">Base de données</label>
+                <input type="text" id="odooDb" placeholder="Nom de la base">
+            </div>
+
+            <div class="form-group">
+                <label for="odooUsername">Login Odoo</label>
+                <input type="text" id="odooUsername" placeholder="votre@email.com">
+            </div>
+
+            <div class="form-group">
+                <label for="odooApiKey">Clé API Odoo</label>
+                <input type="password" id="odooApiKey" placeholder="Votre clé API">
+            </div>
+
+            <button class="btn btn-success" onclick="importToOdoo()" id="importBtn">
+                🎯 Importer dans Odoo
+            </button>
+
+            <div class="progress-bar hidden" id="importProgress" style="margin-top: 20px;">
+                <div class="progress-fill" id="importProgressFill"></div>
+            </div>
+
+            <div id="importStats" class="hidden" style="margin-top: 20px;">
+                <div class="stats" id="statsImport"></div>
+            </div>
         </div>
     </div>
 
@@ -352,8 +401,8 @@
             const dateFrom = document.getElementById('dateFrom').value;
             const dateTo = document.getElementById('dateTo').value;
 
-            let status = null;
-            if (statusValue !== '') status = parseInt(statusValue);
+            // Envoyer le statut tel quel (nom ou vide)
+            let status = statusValue || null;
 
             console.log('Filtres:', { status, dateFrom, dateTo });
 
@@ -578,7 +627,88 @@
                 <div class="stat-box"><div class="stat-number">${unmapped}</div><div class="stat-label">Non mappés</div></div>
             `;
             
+            // Afficher la section import
+            document.getElementById('importSection').classList.remove('hidden');
+            
             showAlert(`✅ ${mapped} produits mappés !`, 'success');
+        }
+
+        async function importToOdoo() {
+            const apiUrl = document.getElementById('apiUrl').value.trim() || localStorage.getItem('apiUrl');
+            const odooUrl = document.getElementById('odooUrl').value.trim();
+            const odooDb = document.getElementById('odooDb').value.trim();
+            const odooUsername = document.getElementById('odooUsername').value.trim();
+            const odooApiKey = document.getElementById('odooApiKey').value.trim();
+
+            if (!apiUrl) {
+                showAlert('⚠️ API non configurée', 'error');
+                return;
+            }
+
+            if (!odooUrl || !odooDb || !odooUsername || !odooApiKey) {
+                showAlert('⚠️ Complétez tous les champs Odoo', 'error');
+                return;
+            }
+
+            if (mappedData.length === 0) {
+                showAlert('⚠️ Aucune donnée à importer. Appliquez d\'abord le mapping.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('importBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Import en cours...';
+
+            const prog = document.getElementById('importProgress');
+            const fill = document.getElementById('importProgressFill');
+            prog.classList.remove('hidden');
+            fill.style.width = '30%';
+
+            try {
+                const res = await fetch(`${apiUrl}/import-to-odoo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orders: mappedData,
+                        odoo_url: odooUrl,
+                        odoo_db: odooDb,
+                        odoo_username: odooUsername,
+                        odoo_api_key: odooApiKey
+                    })
+                });
+
+                fill.style.width = '70%';
+                const data = await res.json();
+                fill.style.width = '100%';
+
+                if (data.success) {
+                    document.getElementById('importStats').classList.remove('hidden');
+                    document.getElementById('statsImport').innerHTML = `
+                        <div class="stat-box"><div class="stat-number">${data.imported}</div><div class="stat-label">Créées</div></div>
+                        <div class="stat-box"><div class="stat-number">${data.errors_count}</div><div class="stat-label">Erreurs</div></div>
+                        <div class="stat-box"><div class="stat-number">${data.total_orders}</div><div class="stat-label">Total</div></div>
+                    `;
+
+                    let msg = `✅ Import: ${data.imported}/${data.total_orders} commandes créées`;
+                    if (data.errors_count > 0) {
+                        msg += `<br><br>⚠️ ${data.errors_count} erreur(s):<br>`;
+                        msg += data.errors.slice(0, 5).join('<br>');
+                        if (data.errors_count > 5) msg += `<br>... +${data.errors_count - 5} autres`;
+                    }
+                    showAlert(msg, data.errors_count === 0 ? 'success' : 'warning');
+                } else {
+                    showAlert(`❌ ${data.error}`, 'error');
+                }
+            } catch (err) {
+                showAlert(`❌ ${err.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🎯 Importer dans Odoo';
+                setTimeout(() => {
+                    prog.classList.add('hidden');
+                    fill.style.width = '0%';
+                }, 2000);
+            }
         }
 
         function downloadExcel() {
