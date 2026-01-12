@@ -341,6 +341,67 @@
             <div id="importStats" class="hidden" style="margin-top: 20px;">
                 <div class="stats" id="statsImport"></div>
             </div>
+
+            <div id="importReport" class="hidden" style="margin-top: 30px;">
+                <h3>📋 Rapport d'import détaillé</h3>
+                
+                <div id="successSection" class="hidden" style="margin-top: 20px;">
+                    <div style="background: #d4edda; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <strong>✅ Commandes créées avec succès</strong>
+                    </div>
+                    <table id="successTable">
+                        <thead>
+                            <tr>
+                                <th>N° Commande</th>
+                                <th>ID Odoo</th>
+                                <th>Client</th>
+                                <th>Lignes</th>
+                                <th>Produits non trouvés</th>
+                                <th>Lien</th>
+                            </tr>
+                        </thead>
+                        <tbody id="successTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="errorSection" class="hidden" style="margin-top: 20px;">
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <strong>❌ Erreurs d'import</strong>
+                    </div>
+                    <table id="errorTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 30%;">N° Commande</th>
+                                <th style="width: 70%;">Erreur</th>
+                            </tr>
+                        </thead>
+                        <tbody id="errorTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="mappingIssuesSection" class="hidden" style="margin-top: 20px;">
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <strong>⚠️ Problèmes de mapping (produits non trouvés dans Odoo)</strong>
+                        <p style="margin-top: 10px; color: #856404; font-size: 0.9em;">
+                            Ces produits existent dans Shopware mais n'ont pas été trouvés dans Odoo avec la référence mappée.
+                        </p>
+                    </div>
+                    <table id="mappingTable">
+                        <thead>
+                            <tr>
+                                <th>Référence Shopware</th>
+                                <th>Référence Odoo (mappée)</th>
+                                <th>Nom produit</th>
+                                <th>Occurences</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mappingTableBody"></tbody>
+                    </table>
+                    <button class="btn" onclick="downloadMappingIssues()" style="margin-top: 15px;">
+                        📥 Télécharger la liste des produits non mappés
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -736,6 +797,9 @@
                     // Afficher les détails dans la console
                     console.log('Détails import:', data);
                     
+                    // Afficher le rapport détaillé
+                    displayImportReport(data, odooUrl);
+                    
                     showAlert(msg, data.errors_count === 0 ? 'success' : 'warning');
                 } else {
                     showAlert(`❌ Erreur: ${data.error}`, 'error');
@@ -762,6 +826,129 @@
             const name = mappedData.length > 0 ? `shopware_odoo_mappe_${ts}.xlsx` : `shopware_odoo_${ts}.xlsx`;
             XLSX.writeFile(wb, name);
             showAlert('💾 Téléchargé !', 'success');
+        }
+
+        function displayImportReport(data, odooUrl) {
+            document.getElementById('importReport').classList.remove('hidden');
+            
+            // Section succès
+            if (data.created_orders && data.created_orders.length > 0) {
+                document.getElementById('successSection').classList.remove('hidden');
+                const tbody = document.getElementById('successTableBody');
+                tbody.innerHTML = '';
+                
+                data.created_orders.forEach(order => {
+                    const productsNotFound = order.products_not_found && order.products_not_found.length > 0 
+                        ? order.products_not_found.join(', ') 
+                        : '-';
+                    
+                    const odooLink = `${odooUrl}/web#id=${order.odoo_id}&model=sale.order&view_type=form`;
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${order.order_number}</td>
+                            <td><strong>${order.odoo_id}</strong></td>
+                            <td>-</td>
+                            <td>${order.lines_count}</td>
+                            <td style="color: ${productsNotFound === '-' ? '#28a745' : '#856404'};">${productsNotFound}</td>
+                            <td><a href="${odooLink}" target="_blank" style="color: #667eea;">🔗 Ouvrir</a></td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            // Section erreurs
+            if (data.errors && data.errors.length > 0) {
+                document.getElementById('errorSection').classList.remove('hidden');
+                const tbody = document.getElementById('errorTableBody');
+                tbody.innerHTML = '';
+                
+                data.errors.forEach(error => {
+                    const parts = error.split(': ');
+                    const orderNum = parts[0] || 'Inconnu';
+                    const errorMsg = parts.slice(1).join(': ') || error;
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>${orderNum}</strong></td>
+                            <td style="color: #721c24;">${errorMsg}</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            // Section problèmes de mapping
+            const mappingIssues = {};
+            if (data.created_orders) {
+                data.created_orders.forEach(order => {
+                    if (order.products_not_found && order.products_not_found.length > 0) {
+                        order.products_not_found.forEach(ref => {
+                            // Trouver les infos du produit dans mappedData
+                            const productInfo = mappedData.find(item => 
+                                item.product_ref_odoo === ref || item.product_ref_shopware === ref
+                            );
+                            
+                            const key = productInfo ? productInfo.product_ref_shopware : ref;
+                            
+                            if (!mappingIssues[key]) {
+                                mappingIssues[key] = {
+                                    shopware_ref: key,
+                                    odoo_ref: productInfo ? productInfo.product_ref_odoo : ref,
+                                    product_name: productInfo ? productInfo.product_name : '-',
+                                    count: 0
+                                };
+                            }
+                            mappingIssues[key].count++;
+                        });
+                    }
+                });
+            }
+            
+            if (Object.keys(mappingIssues).length > 0) {
+                document.getElementById('mappingIssuesSection').classList.remove('hidden');
+                const tbody = document.getElementById('mappingTableBody');
+                tbody.innerHTML = '';
+                
+                // Trier par nombre d'occurrences décroissant
+                const sorted = Object.values(mappingIssues).sort((a, b) => b.count - a.count);
+                
+                sorted.forEach(issue => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>${issue.shopware_ref}</strong></td>
+                            <td><code>${issue.odoo_ref}</code></td>
+                            <td>${issue.product_name}</td>
+                            <td><span style="background: #ffc107; color: #000; padding: 5px 10px; border-radius: 5px; font-weight: bold;">${issue.count}</span></td>
+                        </tr>
+                    `;
+                });
+                
+                // Sauvegarder pour le téléchargement
+                window.mappingIssuesData = sorted;
+            }
+        }
+
+        function downloadMappingIssues() {
+            if (!window.mappingIssuesData || window.mappingIssuesData.length === 0) {
+                showAlert('⚠️ Aucun problème de mapping à télécharger', 'warning');
+                return;
+            }
+            
+            const data = window.mappingIssuesData.map(issue => ({
+                'Référence Shopware': issue.shopware_ref,
+                'Référence Odoo (tentée)': issue.odoo_ref,
+                'Nom produit': issue.product_name,
+                'Nombre d\'occurences': issue.count,
+                'Action requise': 'Vérifier/corriger le mapping dans la base Odoo'
+            }));
+            
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Produits non mappés');
+            
+            const ts = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(wb, `produits_non_mappes_${ts}.xlsx`);
+            showAlert('💾 Liste des produits non mappés téléchargée !', 'success');
         }
 
         window.addEventListener('DOMContentLoaded', () => {
