@@ -353,6 +353,14 @@
                 <small>Cette note apparaîtra sur toutes les commandes</small>
             </div>
 
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="autoConfirm" checked style="width: auto; margin-right: 10px;">
+                    Confirmer automatiquement les commandes (passer de Devis → Commande)
+                </label>
+                <small>Si coché, les commandes seront directement confirmées et prêtes pour le picking</small>
+            </div>
+
             <button class="btn btn-success" onclick="importToOdoo()" id="importBtn">
                 🎯 Importer dans Odoo
             </button>
@@ -781,6 +789,7 @@
             const defaultCarrier = document.getElementById('defaultCarrier').value.trim();
             const defaultWarehouse = document.getElementById('defaultWarehouse').value.trim();
             const orderNote = document.getElementById('orderNote').value.trim();
+            const autoConfirm = document.getElementById('autoConfirm').checked;
 
             if (!apiUrl) {
                 showAlert('⚠️ API non configurée', 'error');
@@ -820,7 +829,8 @@
                         order_tag: orderTag,
                         default_carrier: defaultCarrier ? parseInt(defaultCarrier) : null,
                         default_warehouse: defaultWarehouse ? parseInt(defaultWarehouse) : null,
-                        order_note: orderNote
+                        order_note: orderNote,
+                        auto_confirm: autoConfirm
                     })
                 });
 
