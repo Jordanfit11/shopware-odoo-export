@@ -240,8 +240,14 @@ def import_to_odoo():
         
         # Grouper par commande
         orders_grouped = {}
-        for order_line in orders:
+        for idx, order_line in enumerate(orders):
             order_num = order_line.get('order_number')
+            
+            # Si pas de numéro ou "0", créer un ID unique par ligne
+            if not order_num or order_num == '0' or order_num == 'NO_NUMBER':
+                # Une commande = une ligne
+                order_num = f"IMPORT_{order_line.get('customer_email', 'UNKNOWN')}_{idx}"
+            
             if order_num not in orders_grouped:
                 orders_grouped[order_num] = []
             orders_grouped[order_num].append(order_line)
