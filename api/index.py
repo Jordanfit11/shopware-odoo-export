@@ -208,8 +208,9 @@ def import_to_odoo():
         default_carrier = data.get('default_carrier')
         default_warehouse = data.get('default_warehouse')
         order_note = data.get('order_note', '')
+        auto_confirm = data.get('auto_confirm', False)
         
-        print(f"Options: tag={order_tag}, carrier={default_carrier}, warehouse={default_warehouse}")
+        print(f"Options: tag={order_tag}, carrier={default_carrier}, warehouse={default_warehouse}, auto_confirm={auto_confirm}")
         
         if not all([odoo_url, odoo_db, odoo_username, odoo_api_key]):
             return jsonify({
@@ -408,6 +409,20 @@ def import_to_odoo():
                         'sale.order', 'create',
                         [order_vals]
                     )
+                    
+                    print(f"✅ Commande créée: ID {order_id}")
+                    
+                    # Confirmer automatiquement si demandé
+                    if auto_confirm:
+                        try:
+                            models.execute_kw(
+                                odoo_db, uid, odoo_api_key,
+                                'sale.order', 'action_confirm',
+                                [[order_id]]
+                            )
+                            print(f"✅ Commande confirmée automatiquement")
+                        except Exception as e:
+                            print(f"⚠️ Impossible de confirmer automatiquement: {e}")
                     
                     created_orders.append({
                         'order_number': order_number,
