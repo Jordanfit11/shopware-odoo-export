@@ -304,6 +304,32 @@
                 <input type="password" id="odooApiKey" placeholder="Votre clé API">
             </div>
 
+            <h3 style="margin-top: 30px; margin-bottom: 15px;">⚙️ Options avancées</h3>
+
+            <div class="form-group">
+                <label for="orderTag">Étiquette pour les commandes E-shop</label>
+                <input type="text" id="orderTag" placeholder="E-shop" value="E-shop Shopware">
+                <small>Toutes les commandes importées auront cette étiquette</small>
+            </div>
+
+            <div class="form-group">
+                <label for="defaultCarrier">Transporteur par défaut (ID Odoo)</label>
+                <input type="number" id="defaultCarrier" placeholder="Ex: 1">
+                <small>Laissez vide si aucun. Trouvez l'ID dans Odoo → Inventaire → Configuration → Transporteurs</small>
+            </div>
+
+            <div class="form-group">
+                <label for="defaultWarehouse">Entrepôt par défaut (ID Odoo)</label>
+                <input type="number" id="defaultWarehouse" placeholder="Ex: 1">
+                <small>Laissez vide pour l'entrepôt par défaut</small>
+            </div>
+
+            <div class="form-group">
+                <label for="orderNote">Note interne automatique</label>
+                <input type="text" id="orderNote" placeholder="Ex: Commande importée depuis Shopware">
+                <small>Cette note apparaîtra sur toutes les commandes</small>
+            </div>
+
             <button class="btn btn-success" onclick="importToOdoo()" id="importBtn">
                 🎯 Importer dans Odoo
             </button>
@@ -639,6 +665,12 @@
             const odooDb = document.getElementById('odooDb').value.trim();
             const odooUsername = document.getElementById('odooUsername').value.trim();
             const odooApiKey = document.getElementById('odooApiKey').value.trim();
+            
+            // Options avancées
+            const orderTag = document.getElementById('orderTag').value.trim();
+            const defaultCarrier = document.getElementById('defaultCarrier').value.trim();
+            const defaultWarehouse = document.getElementById('defaultWarehouse').value.trim();
+            const orderNote = document.getElementById('orderNote').value.trim();
 
             if (!apiUrl) {
                 showAlert('⚠️ API non configurée', 'error');
@@ -673,7 +705,12 @@
                         odoo_url: odooUrl,
                         odoo_db: odooDb,
                         odoo_username: odooUsername,
-                        odoo_api_key: odooApiKey
+                        odoo_api_key: odooApiKey,
+                        // Options avancées
+                        order_tag: orderTag,
+                        default_carrier: defaultCarrier ? parseInt(defaultCarrier) : null,
+                        default_warehouse: defaultWarehouse ? parseInt(defaultWarehouse) : null,
+                        order_note: orderNote
                     })
                 });
 
@@ -692,12 +729,17 @@
                     let msg = `✅ Import: ${data.imported}/${data.total_orders} commandes créées`;
                     if (data.errors_count > 0) {
                         msg += `<br><br>⚠️ ${data.errors_count} erreur(s):<br>`;
-                        msg += data.errors.slice(0, 5).join('<br>');
-                        if (data.errors_count > 5) msg += `<br>... +${data.errors_count - 5} autres`;
+                        msg += data.errors.slice(0, 10).join('<br>');
+                        if (data.errors_count > 10) msg += `<br>... +${data.errors_count - 10} autres`;
                     }
+                    
+                    // Afficher les détails dans la console
+                    console.log('Détails import:', data);
+                    
                     showAlert(msg, data.errors_count === 0 ? 'success' : 'warning');
                 } else {
-                    showAlert(`❌ ${data.error}`, 'error');
+                    showAlert(`❌ Erreur: ${data.error}`, 'error');
+                    console.error('Erreur import:', data);
                 }
             } catch (err) {
                 showAlert(`❌ ${err.message}`, 'error');
