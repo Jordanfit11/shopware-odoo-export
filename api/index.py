@@ -24,16 +24,19 @@ def test():
 
 @app.route('/api/orders', methods=['POST'])
 def get_orders():
-    """Récupérer les commandes Shopware"""
+    """Récupérer les commandes Shopware avec filtres"""
     try:
         data = request.json or {}
         limit = data.get('limit', 1000)
         status = data.get('status')
+        date_from = data.get('date_from')
+        date_to = data.get('date_to')
         
-        print(f"=== DEBUG ORDERS ===")
-        print(f"Data reçue: {data}")
-        print(f"Limite: {limit}, Type: {type(limit)}")
-        print(f"Statut: {status}, Type: {type(status)}")
+        print(f"=== EXPORT ORDERS ===")
+        print(f"Limite: {limit}")
+        print(f"Statut: {status}")
+        print(f"Date de: {date_from}")
+        print(f"Date à: {date_to}")
         
         # Appeler Shopware
         url = f"{SHOPWARE_URL}/api/orders"
@@ -41,7 +44,7 @@ def get_orders():
             url,
             auth=HTTPDigestAuth(API_USERNAME, API_KEY),
             params={'limit': limit},
-            timeout=30
+            timeout=60
         )
         
         if response.status_code != 200:
@@ -55,36 +58,33 @@ def get_orders():
         
         print(f"Commandes récupérées: {len(all_orders)}")
         
-        # Debug: afficher les statuts des premières commandes
-        if len(all_orders) > 0:
-            print(f"Exemples de statuts:")
-            for i, order in enumerate(all_orders[:5]):
-                print(f"  Commande {i+1}: status={order.get('status')}, type={type(order.get('status'))}")
-        
-        # Filtrer par statut si nécessaire
+        # Filtrer par statut
+        filtered_orders = all_orders
         if status is not None:
-            print(f"Application du filtre: status == {status}")
-            filtered_orders = []
-            for order in all_orders:
-                order_status = order.get('status')
-                print(f"  Comparaison: {order_status} == {status} ? {order_status == status}")
-                if order_status == status:
-                    filtered_orders.append(order)
-            
-            print(f"Après filtre: {len(filtered_orders)} commandes")
-        else:
-            filtered_orders = all_orders
-            print(f"Pas de filtre appliqué")
+            print(f"Filtre statut: {status} (type: {type(status)})")
+            filtered_orders = [o for o in filtered_orders if o.get('status') == status]
+            print(f"Après filtre statut: {len(filtered_orders)}")
+        
+        # Filtrer par date (côté serveur pour optimisation)
+        if date_from:
+            from datetime import datetime
+            date_from_dt = datetime.fromisoformat(date_from)
+            filtered_orders = [o for o in filtered_orders 
+                             if o.get('orderTime') and datetime.fromisoformat(o['orderTime'][:10]) >= date_from_dt]
+            print(f"Après filtre date_from: {len(filtered_orders)}")
+        
+        if date_to:
+            from datetime import datetime
+            date_to_dt = datetime.fromisoformat(date_to)
+            filtered_orders = [o for o in filtered_orders 
+                             if o.get('orderTime') and datetime.fromisoformat(o['orderTime'][:10]) <= date_to_dt]
+            print(f"Après filtre date_to: {len(filtered_orders)}")
         
         return jsonify({
             'success': True,
             'total': len(all_orders),
             'filtered': len(filtered_orders),
-            'orders': filtered_orders,
-            'debug': {
-                'status_filter': status,
-                'status_type': str(type(status))
-            }
+            'orders': filtered_orders
         })
         
     except Exception as e:
@@ -95,6 +95,49 @@ def get_orders():
             'success': False,
             'error': str(e)
         }), 500
+
+@app.route('/api/debug-statuses', methods=['GET'])
+def debug_statuses():
+    """Voir les statuts réels dans Shopware"""
+    try:
+        url = f"{SHOPWARE_URL}/api/orders"
+        response = requests.get(
+            url,
+            auth=HTTPDigestAuth(API_USERNAME, API_KEY),
+            params={'limit': 100},
+            timeout=30
+        )
+        
+        if response.status_code != 200:
+            return jsonify({'success': False, 'error': f'Erreur {response.status_code}'}), 400
+        
+        orders = response.json().get('data', [])
+        
+        # Compter les statuts
+        status_counts = {}
+        status_examples = {}
+        
+        for order in orders:
+            status = order.get('status')
+            order_number = order.get('number', order.get('id', 'N/A'))
+            
+            if status not in status_counts:
+                status_counts[status] = 0
+                status_examples[status] = []
+            
+            status_counts[status] += 1
+            if len(status_examples[status]) < 3:
+                status_examples[status].append(order_number)
+        
+        return jsonify({
+            'success': True,
+            'status_counts': status_counts,
+            'status_examples': status_examples,
+            'total_orders': len(orders)
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/test-connection', methods=['GET'])
 def test_connection():
