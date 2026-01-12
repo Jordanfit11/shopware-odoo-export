@@ -203,6 +203,14 @@ def import_to_odoo():
         odoo_username = data.get('odoo_username')
         odoo_api_key = data.get('odoo_api_key')
         
+        # Options avancées
+        order_tag = data.get('order_tag', 'E-shop Shopware')
+        default_carrier = data.get('default_carrier')
+        default_warehouse = data.get('default_warehouse')
+        order_note = data.get('order_note', '')
+        
+        print(f"Options: tag={order_tag}, carrier={default_carrier}, warehouse={default_warehouse}")
+        
         if not all([odoo_url, odoo_db, odoo_username, odoo_api_key]):
             return jsonify({
                 'success': False,
@@ -356,6 +364,28 @@ def import_to_odoo():
                         'client_order_ref': order_number,
                         'order_line': order_line_data
                     }
+                    
+                    # Ajouter les options avancées
+                    if default_carrier:
+                        order_vals['carrier_id'] = default_carrier
+                        print(f"Transporteur: {default_carrier}")
+                    
+                    if default_warehouse:
+                        order_vals['warehouse_id'] = default_warehouse
+                        print(f"Entrepôt: {default_warehouse}")
+                    
+                    if order_note:
+                        order_vals['note'] = order_note
+                    
+                    # Ajouter une étiquette/tag si Odoo le supporte
+                    # Note: cela nécessite que le module sale_management soit installé
+                    if order_tag:
+                        # On va ajouter le tag dans la note pour l'instant
+                        tag_note = f"[{order_tag}]"
+                        if 'note' in order_vals:
+                            order_vals['note'] = f"{tag_note} {order_vals['note']}"
+                        else:
+                            order_vals['note'] = tag_note
                     
                     # Ajouter la date si disponible (convertir le format)
                     order_date = first_line.get('order_date')
