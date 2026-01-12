@@ -72,19 +72,42 @@
         .btn-success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
         .btn-warning { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); }
         .alert {
-            padding: 15px;
+            padding: 15px 50px 15px 15px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             animation: slideIn 0.3s;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .alert-close {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.1);
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .alert-close:hover {
+            background: rgba(0,0,0,0.2);
         }
         @keyframes slideIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .alert-success { background: #d4edda; color: #155724; }
-        .alert-error { background: #f8d7da; color: #721c24; }
-        .alert-info { background: #d1ecf1; color: #0c5460; }
-        .alert-warning { background: #fff3cd; color: #856404; }
+        .alert-success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+        .alert-error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+        .alert-info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
+        .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -414,13 +437,39 @@
         let odooFileData = [];
         let availableColumns = [];
 
-        function showAlert(msg, type = 'info') {
+        function showAlert(msg, type = 'info', duration = 0) {
             const alerts = document.getElementById('alerts');
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
-            alert.innerHTML = msg;
+            
+            // Icônes selon le type
+            const icons = {
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️',
+                'info': 'ℹ️'
+            };
+            
+            alert.innerHTML = `
+                <strong>${icons[type] || ''}</strong> ${msg}
+                <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+            `;
+            
             alerts.appendChild(alert);
-            setTimeout(() => alert.remove(), 5000);
+            
+            // Supprimer automatiquement après X secondes (si duration > 0)
+            if (duration > 0) {
+                setTimeout(() => {
+                    if (alert.parentElement) {
+                        alert.style.opacity = '0';
+                        alert.style.transform = 'translateX(100%)';
+                        setTimeout(() => alert.remove(), 300);
+                    }
+                }, duration);
+            }
+            
+            // Scroll vers le haut pour voir l'alerte
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         async function testConnection() {
@@ -529,9 +578,9 @@
                     document.getElementById('mappingSection').classList.remove('hidden');
                     document.getElementById('downloadSection').classList.remove('hidden');
                     
-                    showAlert(`✅ ${ordersData.length} lignes exportées !`, 'success');
+                    showAlert(`${ordersData.length} lignes exportées !`, 'success', 3000);
                 } else {
-                    showAlert(`❌ ${data.error}`, 'error');
+                    showAlert(data.error, 'error', 0);
                 }
             } catch (err) {
                 showAlert(`❌ ${err.message}`, 'error');
@@ -787,11 +836,9 @@
                         <div class="stat-box"><div class="stat-number">${data.total_orders}</div><div class="stat-label">Total</div></div>
                     `;
 
-                    let msg = `✅ Import: ${data.imported}/${data.total_orders} commandes créées`;
+                    let msg = `Import terminé: ${data.imported}/${data.total_orders} commandes créées`;
                     if (data.errors_count > 0) {
-                        msg += `<br><br>⚠️ ${data.errors_count} erreur(s):<br>`;
-                        msg += data.errors.slice(0, 10).join('<br>');
-                        if (data.errors_count > 10) msg += `<br>... +${data.errors_count - 10} autres`;
+                        msg += `<br><br>⚠️ ${data.errors_count} erreur(s) - Consultez le rapport détaillé ci-dessous`;
                     }
                     
                     // Afficher les détails dans la console
@@ -800,9 +847,9 @@
                     // Afficher le rapport détaillé
                     displayImportReport(data, odooUrl);
                     
-                    showAlert(msg, data.errors_count === 0 ? 'success' : 'warning');
+                    showAlert(msg, data.errors_count === 0 ? 'success' : 'warning', 0); // 0 = ne disparaît jamais
                 } else {
-                    showAlert(`❌ Erreur: ${data.error}`, 'error');
+                    showAlert(`Erreur: ${data.error}`, 'error', 0);
                     console.error('Erreur import:', data);
                 }
             } catch (err) {
