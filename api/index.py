@@ -58,11 +58,26 @@ def get_orders():
         
         print(f"Commandes récupérées: {len(all_orders)}")
         
-        # Filtrer par statut
+        # Filtrer par statut (nom ou numéro)
         filtered_orders = all_orders
-        if status is not None:
+        if status is not None and status != "":
             print(f"Filtre statut: {status} (type: {type(status)})")
-            filtered_orders = [o for o in filtered_orders if o.get('status') == status]
+            
+            if status == 'null':
+                # Filtrer les commandes avec statut null
+                filtered_orders = [o for o in filtered_orders if o.get('status') is None]
+            else:
+                # Filtrer par nom de statut OU par numéro
+                filtered_orders = []
+                for o in filtered_orders:
+                    order_status_obj = o.get('orderStatus', {})
+                    status_name = order_status_obj.get('name') if isinstance(order_status_obj, dict) else None
+                    status_num = o.get('status')
+                    
+                    # Comparer avec le nom OU le numéro
+                    if status_name == status or status_num == status:
+                        filtered_orders.append(o)
+            
             print(f"Après filtre statut: {len(filtered_orders)}")
         
         # Filtrer par date (côté serveur pour optimisation)
@@ -113,21 +128,27 @@ def debug_statuses():
         
         orders = response.json().get('data', [])
         
-        # Compter les statuts
+        # Compter les statuts (numéro ET nom)
         status_counts = {}
         status_examples = {}
         
         for order in orders:
-            status = order.get('status')
+            # Essayer différents champs
+            status_num = order.get('status')
+            order_status_obj = order.get('orderStatus', {})
+            status_name = order_status_obj.get('name') if isinstance(order_status_obj, dict) else None
+            
+            # Clé combinée
+            key = f"{status_num} - {status_name}" if status_name else str(status_num)
             order_number = order.get('number', order.get('id', 'N/A'))
             
-            if status not in status_counts:
-                status_counts[status] = 0
-                status_examples[status] = []
+            if key not in status_counts:
+                status_counts[key] = 0
+                status_examples[key] = []
             
-            status_counts[status] += 1
-            if len(status_examples[status]) < 3:
-                status_examples[status].append(order_number)
+            status_counts[key] += 1
+            if len(status_examples[key]) < 3:
+                status_examples[key].append(order_number)
         
         return jsonify({
             'success': True,
