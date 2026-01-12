@@ -256,98 +256,141 @@ def import_to_odoo():
             try:
                 first_line = lines[0]
                 
+                print(f"\n=== Traitement commande {order_number} ===")
+                
                 # Trouver ou créer le client
                 customer_email = first_line.get('customer_email')
                 customer_name = first_line.get('customer_name', 'Client inconnu')
                 
+                print(f"Client: {customer_name} ({customer_email})")
+                
                 partner_id = None
                 if customer_email:
-                    partner_ids = models.execute_kw(
-                        odoo_db, uid, odoo_api_key,
-                        'res.partner', 'search',
-                        [[['email', '=', customer_email]]]
-                    )
-                    
-                    if partner_ids:
-                        partner_id = partner_ids[0]
-                    else:
-                        # Créer le client
-                        partner_id = models.execute_kw(
+                    try:
+                        partner_ids = models.execute_kw(
                             odoo_db, uid, odoo_api_key,
-                            'res.partner', 'create',
-                            [{
-                                'name': customer_name,
-                                'email': customer_email,
-                                'customer_rank': 1
-                            }]
+                            'res.partner', 'search',
+                            [[['email', '=', customer_email]]]
                         )
+                        
+                        if partner_ids:
+                            partner_id = partner_ids[0]
+                            print(f"Client trouvé: ID {partner_id}")
+                        else:
+                            # Créer le client
+                            print(f"Création du client...")
+                            partner_id = models.execute_kw(
+                                odoo_db, uid, odoo_api_key,
+                                'res.partner', 'create',
+                                [{
+                                    'name': customer_name,
+                                    'email': customer_email,
+                                    'customer_rank': 1
+                                }]
+                            )
+                            print(f"Client créé: ID {partner_id}")
+                    except Exception as e:
+                        print(f"Erreur création client: {str(e)}")
+                        errors.append(f"{order_number}: Erreur client - {str(e)[:200]}")
+                        continue
                 
                 if not partner_id:
-                    errors.append(f"{order_number}: Client non trouvé/créé")
+                    errors.append(f"{order_number}: Client non trouvé/créé (email manquant)")
+                    print("SKIP: Pas de client")
                     continue
                 
                 # Préparer les lignes de commande
                 order_line_data = []
                 products_not_found = []
                 
+                print(f"Traitement de {len(lines)} lignes...")
+                
                 for line in lines:
                     product_ref = line.get('product_ref_odoo')
                     
                     if not product_ref:
+                        print(f"  SKIP ligne: pas de référence Odoo")
                         continue
                     
                     # Trouver le produit
-                    product_ids = models.execute_kw(
-                        odoo_db, uid, odoo_api_key,
-                        'product.product', 'search',
-                        [[['default_code', '=', product_ref]]]
-                    )
-                    
-                    if not product_ids:
-                        products_not_found.append(product_ref)
-                        continue
-                    
-                    order_line_data.append((0, 0, {
-                        'product_id': product_ids[0],
-                        'product_uom_qty': float(line.get('quantity', 1)),
-                        'price_unit': float(line.get('unit_price', 0))
-                    }))
+                    try:
+                        product_ids = models.execute_kw(
+                            odoo_db, uid, odoo_api_key,
+                            'product.product', 'search',
+                            [[['default_code', '=', product_ref]]]
+                        )
+                        
+                        if not product_ids:
+                            print(f"  Produit non trouvé: {product_ref}")
+                            products_not_found.append(product_ref)
+                            continue
+                        
+                        print(f"  Produit trouvé: {product_ref} -> ID {product_ids[0]}")
+                        
+                        order_line_data.append((0, 0, {
+                            'product_id': product_ids[0],
+                            'product_uom_qty': float(line.get('quantity', 1)),
+                            'price_unit': float(line.get('unit_price', 0))
+                        }))
+                    except Exception as e:
+                        print(f"  Erreur recherche produit {product_ref}: {str(e)}")
+                        products_not_found.append(f"{product_ref} (erreur)")
                 
                 if not order_line_data:
                     errors.append(f"{order_number}: Aucun produit trouvé")
+                    print("SKIP: Aucun produit")
                     continue
                 
                 # Créer la commande
-                order_vals = {
-                    'partner_id': partner_id,
-                    'client_order_ref': order_number,
-                    'order_line': order_line_data
-                }
+                print(f"Création commande avec {len(order_line_data)} lignes...")
                 
-                # Ajouter la date si disponible
-                order_date = first_line.get('order_date')
-                if order_date:
-                    order_vals['date_order'] = order_date
-                
-                order_id = models.execute_kw(
-                    odoo_db, uid, odoo_api_key,
-                    'sale.order', 'create',
-                    [order_vals]
-                )
-                
-                created_orders.append({
-                    'order_number': order_number,
-                    'odoo_id': order_id,
-                    'lines_count': len(order_line_data),
-                    'products_not_found': products_not_found
-                })
-                
-                print(f"Commande {order_number} créée - ID: {order_id}")
+                try:
+                    order_vals = {
+                        'partner_id': partner_id,
+                        'client_order_ref': order_number,
+                        'order_line': order_line_data
+                    }
+                    
+                    # Ajouter la date si disponible (convertir le format)
+                    order_date = first_line.get('order_date')
+                    if order_date:
+                        # Convertir ISO format vers format Odoo
+                        # De: 2025-12-01T17:23:37+0100
+                        # Vers: 2025-12-01 17:23:37
+                        try:
+                            import re
+                            # Enlever le timezone et remplacer T par espace
+                            clean_date = re.sub(r'[+-]\d{4}$', '', order_date)  # Enlever +0100
+                            clean_date = clean_date.replace('T', ' ')  # T -> espace
+                            order_vals['date_order'] = clean_date
+                            print(f"Date convertie: {order_date} -> {clean_date}")
+                        except Exception as e:
+                            print(f"Erreur conversion date: {e}, date ignorée")
+                    
+                    order_id = models.execute_kw(
+                        odoo_db, uid, odoo_api_key,
+                        'sale.order', 'create',
+                        [order_vals]
+                    )
+                    
+                    created_orders.append({
+                        'order_number': order_number,
+                        'odoo_id': order_id,
+                        'lines_count': len(order_line_data),
+                        'products_not_found': products_not_found
+                    })
+                    
+                    print(f"✅ Commande créée: ID {order_id}")
+                    
+                except Exception as e:
+                    error_msg = f"{order_number}: Erreur création - {str(e)[:500]}"
+                    errors.append(error_msg)
+                    print(f"❌ {error_msg}")
                 
             except Exception as e:
-                error_msg = f"{order_number}: {str(e)}"
+                error_msg = f"{order_number}: {str(e)[:500]}"
                 errors.append(error_msg)
-                print(f"Erreur: {error_msg}")
+                print(f"❌ Erreur globale: {error_msg}")
         
         return jsonify({
             'success': True,
