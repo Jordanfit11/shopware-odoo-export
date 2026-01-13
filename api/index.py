@@ -58,15 +58,8 @@ def get_orders():
         
         print(f"Commandes récupérées: {len(all_orders)}")
         
-        # Filtrer les commandes sans numéro (brouillons)
-        # Exclure si number est vide, "0", 0, ou null
-        filtered_orders = [
-            o for o in all_orders 
-            if o.get('number') and str(o.get('number')) not in ['0', '', 'null']
-        ]
-        print(f"Après filtre 'sans numéro': {len(filtered_orders)} (exclus: {len(all_orders) - len(filtered_orders)})")
-        
         # Filtrer par statut (nom ou numéro)
+        filtered_orders = all_orders
         if status is not None and status != "":
             print(f"Filtre statut: {status} (type: {type(status)})")
             
