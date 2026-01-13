@@ -383,8 +383,8 @@
                 ➕ Ajouter un transporteur
             </button>
 
-            <div id="carrierHelpModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
-                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+            <div id="carrierHelpModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center;" onclick="if(event.target === this) hideCarrierHelp()">
+                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; max-height: 80vh; overflow-y: auto;" onclick="event.stopPropagation()">
                     <h3 style="margin-bottom: 15px;">📋 Comment trouver les IDs des méthodes Odoo ?</h3>
                     <ol style="line-height: 2; color: #333;">
                         <li><strong>Odoo</strong> → <strong>Inventaire</strong> → <strong>Configuration</strong> → <strong>Méthodes de livraison</strong></li>
@@ -1151,10 +1151,12 @@
 
         function showCarrierHelp() {
             document.getElementById('carrierHelpModal').classList.remove('hidden');
+            document.getElementById('carrierHelpModal').style.display = 'flex';
         }
 
         function hideCarrierHelp() {
             document.getElementById('carrierHelpModal').classList.add('hidden');
+            document.getElementById('carrierHelpModal').style.display = 'none';
         }
 
         function getCarrierMapping() {
