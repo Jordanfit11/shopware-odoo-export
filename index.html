@@ -371,6 +371,10 @@
                 🎯 Importer dans Odoo
             </button>
 
+            <button class="btn btn-secondary" onclick="clearSavedCredentials()" style="margin-top: 10px;">
+                🗑️ Effacer les données sauvegardées
+            </button>
+
             <div class="progress-bar hidden" id="importProgress" style="margin-top: 20px;">
                 <div class="progress-fill" id="importProgressFill"></div>
             </div>
@@ -799,14 +803,26 @@
             const autoConfirm = document.getElementById('autoConfirm').checked;
 
             if (!apiUrl) {
-                showAlert('⚠️ API non configurée', 'error');
+                showAlert('⚠️ API non configurée', 'error', 0);
                 return;
             }
 
             if (!odooUrl || !odooDb || !odooUsername || !odooApiKey) {
-                showAlert('⚠️ Complétez tous les champs Odoo', 'error');
+                showAlert('⚠️ Complétez tous les champs Odoo', 'error', 0);
                 return;
             }
+            
+            // Sauvegarder les credentials Odoo pour la prochaine fois
+            localStorage.setItem('odooUrl', odooUrl);
+            localStorage.setItem('odooDb', odooDb);
+            localStorage.setItem('odooUsername', odooUsername);
+            localStorage.setItem('odooApiKey', odooApiKey);
+            localStorage.setItem('orderTag', orderTag);
+            localStorage.setItem('defaultCarrier', defaultCarrier);
+            localStorage.setItem('defaultWarehouse', defaultWarehouse);
+            localStorage.setItem('orderNote', orderNote);
+            localStorage.setItem('orderPrefix', orderPrefix);
+            localStorage.setItem('autoConfirm', autoConfirm);
 
             if (mappedData.length === 0) {
                 showAlert('⚠️ Aucune donnée à importer. Appliquez d\'abord le mapping.', 'error');
@@ -995,7 +1011,7 @@
 
         function downloadMappingIssues() {
             if (!window.mappingIssuesData || window.mappingIssuesData.length === 0) {
-                showAlert('⚠️ Aucun problème de mapping à télécharger', 'warning');
+                showAlert('⚠️ Aucun problème de mapping à télécharger', 'warning', 3000);
                 return;
             }
             
@@ -1013,12 +1029,68 @@
             
             const ts = new Date().toISOString().slice(0, 10);
             XLSX.writeFile(wb, `produits_non_mappes_${ts}.xlsx`);
-            showAlert('💾 Liste des produits non mappés téléchargée !', 'success');
+            showAlert('💾 Liste des produits non mappés téléchargée !', 'success', 3000);
+        }
+
+        function clearSavedCredentials() {
+            if (confirm('⚠️ Voulez-vous vraiment effacer toutes les données sauvegardées (credentials Odoo, options, etc.) ?')) {
+                localStorage.removeItem('odooUrl');
+                localStorage.removeItem('odooDb');
+                localStorage.removeItem('odooUsername');
+                localStorage.removeItem('odooApiKey');
+                localStorage.removeItem('orderTag');
+                localStorage.removeItem('defaultCarrier');
+                localStorage.removeItem('defaultWarehouse');
+                localStorage.removeItem('orderNote');
+                localStorage.removeItem('orderPrefix');
+                localStorage.removeItem('autoConfirm');
+                
+                // Vider les champs
+                document.getElementById('odooUrl').value = '';
+                document.getElementById('odooDb').value = '';
+                document.getElementById('odooUsername').value = '';
+                document.getElementById('odooApiKey').value = '';
+                document.getElementById('orderTag').value = 'E-shop Shopware';
+                document.getElementById('defaultCarrier').value = '';
+                document.getElementById('defaultWarehouse').value = '';
+                document.getElementById('orderNote').value = '';
+                document.getElementById('orderPrefix').value = 'ESHOP';
+                document.getElementById('autoConfirm').checked = true;
+                
+                showAlert('✅ Données effacées !', 'success', 3000);
+            }
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            const saved = localStorage.getItem('apiUrl');
-            if (saved) document.getElementById('apiUrl').value = saved;
+            // Charger l'API URL
+            const savedApiUrl = localStorage.getItem('apiUrl');
+            if (savedApiUrl) document.getElementById('apiUrl').value = savedApiUrl;
+            
+            // Charger les credentials Odoo
+            const savedOdooUrl = localStorage.getItem('odooUrl');
+            const savedOdooDb = localStorage.getItem('odooDb');
+            const savedOdooUsername = localStorage.getItem('odooUsername');
+            const savedOdooApiKey = localStorage.getItem('odooApiKey');
+            
+            if (savedOdooUrl) document.getElementById('odooUrl').value = savedOdooUrl;
+            if (savedOdooDb) document.getElementById('odooDb').value = savedOdooDb;
+            if (savedOdooUsername) document.getElementById('odooUsername').value = savedOdooUsername;
+            if (savedOdooApiKey) document.getElementById('odooApiKey').value = savedOdooApiKey;
+            
+            // Charger les options avancées
+            const savedOrderTag = localStorage.getItem('orderTag');
+            const savedDefaultCarrier = localStorage.getItem('defaultCarrier');
+            const savedDefaultWarehouse = localStorage.getItem('defaultWarehouse');
+            const savedOrderNote = localStorage.getItem('orderNote');
+            const savedOrderPrefix = localStorage.getItem('orderPrefix');
+            const savedAutoConfirm = localStorage.getItem('autoConfirm');
+            
+            if (savedOrderTag) document.getElementById('orderTag').value = savedOrderTag;
+            if (savedDefaultCarrier) document.getElementById('defaultCarrier').value = savedDefaultCarrier;
+            if (savedDefaultWarehouse) document.getElementById('defaultWarehouse').value = savedDefaultWarehouse;
+            if (savedOrderNote) document.getElementById('orderNote').value = savedOrderNote;
+            if (savedOrderPrefix) document.getElementById('orderPrefix').value = savedOrderPrefix;
+            if (savedAutoConfirm !== null) document.getElementById('autoConfirm').checked = savedAutoConfirm === 'true';
         });
     </script>
 </body>
