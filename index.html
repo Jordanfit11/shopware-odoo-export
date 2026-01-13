@@ -228,14 +228,28 @@
                 <label for="statusFilter">📊 Statut (optionnel)</label>
                 <select id="statusFilter">
                     <option value="">Tous les statuts</option>
-                    <option value="Open">Open (Ouvert)</option>
-                    <option value="Completely delivered">Completely delivered (Livré)</option>
-                    <option value="NOT IN USE-In process">En cours</option>
-                    <option value="NOT IN USE-Completed">Complété</option>
-                    <option value="NOT IN USE-Cancelled/rejected">Annulé</option>
-                    <option value="NOT IN USE-Ready for delivery">Prêt à livrer</option>
+                    <option value="0">0 - Open (Ouvert)</option>
+                    <option value="1">1 - In process (En cours)</option>
+                    <option value="2">2 - Completely delivered (Complètement livré)</option>
+                    <option value="7">7 - Cancelled (Annulé)</option>
+                    <option value="8">8 - Clarification needed (Clarification nécessaire)</option>
                 </select>
-                <small>💡 Utilisez "Debug Statuts" pour voir tous les statuts disponibles</small>
+                <small>💡 Utilisez "Debug Statuts" pour voir tous les statuts disponibles dans VOTRE Shopware</small>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="excludeZeroAmount" checked style="width: auto; margin-right: 10px;">
+                    Exclure les commandes à 0€ (cartes cadeaux, etc.)
+                </label>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="excludeDelivered" checked style="width: auto; margin-right: 10px;">
+                    Exclure les commandes "Completely delivered"
+                </label>
+                <small>Empêche d'importer les commandes déjà livrées</small>
             </div>
 
             <button class="btn" onclick="exportShopware()" id="exportBtn">
@@ -618,6 +632,30 @@
                 if (data.success) {
                     ordersData = transformOrders(data.orders);
                     
+                    // Filtres côté client
+                    const excludeZero = document.getElementById('excludeZeroAmount').checked;
+                    const excludeDelivered = document.getElementById('excludeDelivered').checked;
+                    
+                    let filteredCount = 0;
+                    
+                    if (excludeZero) {
+                        const beforeCount = ordersData.length;
+                        ordersData = ordersData.filter(order => {
+                            const total = parseFloat(order.total_price) || 0;
+                            return total > 0;
+                        });
+                        filteredCount += beforeCount - ordersData.length;
+                    }
+                    
+                    if (excludeDelivered) {
+                        const beforeCount = ordersData.length;
+                        ordersData = ordersData.filter(order => {
+                            const status = (order.order_status || '').toLowerCase();
+                            return !status.includes('delivered') && !status.includes('livr');
+                        });
+                        filteredCount += beforeCount - ordersData.length;
+                    }
+                    
                     // Filtrer par date côté client si nécessaire
                     if (dateFrom || dateTo) {
                         ordersData = ordersData.filter(order => {
@@ -632,12 +670,15 @@
                     document.getElementById('statsShopware').innerHTML = `
                         <div class="stat-box"><div class="stat-number">${data.filtered}</div><div class="stat-label">Commandes API</div></div>
                         <div class="stat-box"><div class="stat-number">${ordersData.length}</div><div class="stat-label">Lignes finales</div></div>
+                        ${filteredCount > 0 ? `<div class="stat-box"><div class="stat-number">${filteredCount}</div><div class="stat-label">Filtrées</div></div>` : ''}
                     `;
                     
                     document.getElementById('mappingSection').classList.remove('hidden');
                     document.getElementById('downloadSection').classList.remove('hidden');
                     
-                    showAlert(`${ordersData.length} lignes exportées !`, 'success', 3000);
+                    let message = `${ordersData.length} lignes exportées !`;
+                    if (filteredCount > 0) message += ` (${filteredCount} filtrées)`;
+                    showAlert(message, 'success', 3000);
                 } else {
                     showAlert(data.error, 'error', 0);
                 }
