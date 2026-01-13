@@ -208,9 +208,10 @@ def import_to_odoo():
         default_carrier = data.get('default_carrier')
         default_warehouse = data.get('default_warehouse')
         order_note = data.get('order_note', '')
+        order_prefix = data.get('order_prefix', '')
         auto_confirm = data.get('auto_confirm', False)
         
-        print(f"Options: tag={order_tag}, carrier={default_carrier}, warehouse={default_warehouse}, auto_confirm={auto_confirm}")
+        print(f"Options: tag={order_tag}, carrier={default_carrier}, warehouse={default_warehouse}, prefix={order_prefix}, auto_confirm={auto_confirm}")
         
         if not all([odoo_url, odoo_db, odoo_username, odoo_api_key]):
             return jsonify({
@@ -265,6 +266,29 @@ def import_to_odoo():
         
         created_orders = []
         errors = []
+        
+        # Compteur pour générer des numéros séquentiels si préfixe fourni
+        order_counter = 1
+        if order_prefix:
+            # Trouver le dernier numéro utilisé pour ce préfixe
+            try:
+                existing_orders = models.execute_kw(
+                    odoo_db, uid, odoo_api_key,
+                    'sale.order', 'search_read',
+                    [[['name', 'like', f'{order_prefix}/']]],
+                    {'fields': ['name'], 'limit': 1, 'order': 'id desc'}
+                )
+                if existing_orders:
+                    last_name = existing_orders[0]['name']
+                    # Extraire le numéro (ex: ESHOP/00005 → 5)
+                    import re
+                    match = re.search(r'(\d+)$', last_name)
+                    if match:
+                        order_counter = int(match.group(1)) + 1
+                        print(f"Dernier numéro trouvé: {match.group(1)}, on commence à {order_counter}")
+            except Exception as e:
+                print(f"⚠️ Impossible de trouver le dernier numéro: {e}")
+                order_counter = 1
         
         # Créer chaque commande
         for order_number, lines in orders_grouped.items():
@@ -403,6 +427,15 @@ def import_to_odoo():
                             print(f"Date convertie: {order_date} -> {clean_date}")
                         except Exception as e:
                             print(f"Erreur conversion date: {e}, date ignorée")
+                    
+                    # Ajouter un nom personnalisé si préfixe fourni
+                    if order_prefix:
+                        from datetime import datetime
+                        year = datetime.now().strftime('%Y')
+                        custom_name = f"{order_prefix}/{year}/{str(order_counter).zfill(5)}"
+                        order_vals['name'] = custom_name
+                        print(f"Nom personnalisé: {custom_name}")
+                        order_counter += 1
                     
                     order_id = models.execute_kw(
                         odoo_db, uid, odoo_api_key,
