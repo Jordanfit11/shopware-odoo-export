@@ -210,8 +210,10 @@ def import_to_odoo():
         order_note = data.get('order_note', '')
         order_prefix = data.get('order_prefix', '')
         auto_confirm = data.get('auto_confirm', False)
+        carrier_mapping = data.get('carrier_mapping', {})
         
         print(f"Options: tag={order_tag}, carrier={default_carrier}, warehouse={default_warehouse}, prefix={order_prefix}, auto_confirm={auto_confirm}")
+        print(f"Carrier mapping: {carrier_mapping}")
         
         if not all([odoo_url, odoo_db, odoo_username, odoo_api_key]):
             return jsonify({
@@ -393,7 +395,27 @@ def import_to_odoo():
                     # Ajouter les options avancées
                     if default_carrier:
                         order_vals['carrier_id'] = default_carrier
-                        print(f"Transporteur: {default_carrier}")
+                        print(f"Transporteur par défaut: {default_carrier}")
+                    
+                    # Détection automatique du transporteur depuis Shopware
+                    shopware_carrier_name = first_line.get('dispatch_name', '')
+                    if shopware_carrier_name and carrier_mapping:
+                        # Normaliser le nom (minuscules, sans accents)
+                        normalized_name = shopware_carrier_name.lower().strip()
+                        normalized_name = normalized_name.normalize("NFD").replace("[\u0300-\u036f]", "") if hasattr(normalized_name, 'normalize') else normalized_name
+                        
+                        # Chercher dans le mapping
+                        matched_carrier_id = None
+                        for shopware_pattern, odoo_carrier_id in carrier_mapping.items():
+                            if shopware_pattern.lower() in normalized_name or normalized_name in shopware_pattern.lower():
+                                matched_carrier_id = odoo_carrier_id
+                                break
+                        
+                        if matched_carrier_id:
+                            order_vals['carrier_id'] = matched_carrier_id
+                            print(f"Transporteur mappé: '{shopware_carrier_name}' → ID {matched_carrier_id}")
+                        else:
+                            print(f"⚠️ Transporteur non mappé: '{shopware_carrier_name}'")
                     
                     if default_warehouse:
                         order_vals['warehouse_id'] = default_warehouse
