@@ -359,6 +359,47 @@
                 <small>Les commandes seront créées avec ce préfixe (ex: ESHOP/2026/00001 au lieu de WH/ESHOP/00007)</small>
             </div>
 
+            <h3 style="margin-top: 30px; margin-bottom: 15px;">🚚 Mapping des transporteurs</h3>
+            <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">
+                Associez les transporteurs Shopware avec les méthodes de livraison Odoo. 
+                <a href="#" onclick="showCarrierHelp(); return false;" style="color: #667eea;">Comment trouver les IDs Odoo ?</a>
+            </p>
+
+            <div id="carrierMappingContainer">
+                <div class="carrier-mapping-row" style="display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-bottom: 10px; align-items: end;">
+                    <div>
+                        <label style="font-size: 0.85em;">Nom transporteur Shopware</label>
+                        <input type="text" class="carrier-shopware-name" placeholder="Ex: Colissimo, Mondial Relay..." style="width: 100%;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.85em;">ID Méthode Odoo</label>
+                        <input type="number" class="carrier-odoo-id" placeholder="Ex: 5" style="width: 100%;">
+                    </div>
+                    <button type="button" class="btn-remove-carrier" onclick="removeCarrierMapping(this)" style="background: #dc3545; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 18px; width: 40px; height: 40px;">×</button>
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-secondary" onclick="addCarrierMapping()" style="margin-top: 10px;">
+                ➕ Ajouter un transporteur
+            </button>
+
+            <div id="carrierHelpModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+                    <h3 style="margin-bottom: 15px;">📋 Comment trouver les IDs des méthodes Odoo ?</h3>
+                    <ol style="line-height: 2; color: #333;">
+                        <li><strong>Odoo</strong> → <strong>Inventaire</strong> → <strong>Configuration</strong> → <strong>Méthodes de livraison</strong></li>
+                        <li>Cliquez sur une méthode (ex: "Sendcloud - Colissimo")</li>
+                        <li>Regardez l'URL : <code style="background: #f0f0f0; padding: 2px 5px;">...&id=<strong>5</strong>&...</code></li>
+                        <li>L'<strong>ID = 5</strong> dans cet exemple</li>
+                        <li>Notez l'ID pour chaque transporteur</li>
+                    </ol>
+                    <p style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 10px; color: #856404;">
+                        💡 <strong>Astuce :</strong> Créez d'abord toutes vos méthodes Sendcloud dans Odoo, puis notez leurs IDs !
+                    </p>
+                    <button class="btn" onclick="hideCarrierHelp()" style="margin-top: 20px; width: 100%;">Fermer</button>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>
                     <input type="checkbox" id="autoConfirm" checked style="width: auto; margin-right: 10px;">
@@ -801,6 +842,9 @@
             const orderNote = document.getElementById('orderNote').value.trim();
             const orderPrefix = document.getElementById('orderPrefix').value.trim();
             const autoConfirm = document.getElementById('autoConfirm').checked;
+            
+            // Récupérer le mapping des transporteurs
+            const carrierMapping = getCarrierMapping();
 
             if (!apiUrl) {
                 showAlert('⚠️ API non configurée', 'error', 0);
@@ -823,6 +867,7 @@
             localStorage.setItem('orderNote', orderNote);
             localStorage.setItem('orderPrefix', orderPrefix);
             localStorage.setItem('autoConfirm', autoConfirm);
+            saveCarrierMapping(carrierMapping);
 
             if (mappedData.length === 0) {
                 showAlert('⚠️ Aucune donnée à importer. Appliquez d\'abord le mapping.', 'error');
@@ -854,7 +899,8 @@
                         default_warehouse: defaultWarehouse ? parseInt(defaultWarehouse) : null,
                         order_note: orderNote,
                         order_prefix: orderPrefix,
-                        auto_confirm: autoConfirm
+                        auto_confirm: autoConfirm,
+                        carrier_mapping: carrierMapping
                     })
                 });
 
@@ -1044,6 +1090,7 @@
                 localStorage.removeItem('orderNote');
                 localStorage.removeItem('orderPrefix');
                 localStorage.removeItem('autoConfirm');
+                localStorage.removeItem('carrierMapping');
                 
                 // Vider les champs
                 document.getElementById('odooUrl').value = '';
@@ -1057,7 +1104,119 @@
                 document.getElementById('orderPrefix').value = 'ESHOP';
                 document.getElementById('autoConfirm').checked = true;
                 
+                // Réinitialiser le mapping
+                document.getElementById('carrierMappingContainer').innerHTML = `
+                    <div class="carrier-mapping-row" style="display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-bottom: 10px; align-items: end;">
+                        <div>
+                            <label style="font-size: 0.85em;">Nom transporteur Shopware</label>
+                            <input type="text" class="carrier-shopware-name" placeholder="Ex: Colissimo, Mondial Relay..." style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.85em;">ID Méthode Odoo</label>
+                            <input type="number" class="carrier-odoo-id" placeholder="Ex: 5" style="width: 100%;">
+                        </div>
+                        <button type="button" class="btn-remove-carrier" onclick="removeCarrierMapping(this)" style="background: #dc3545; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 18px; width: 40px; height: 40px;">×</button>
+                    </div>
+                `;
+                
                 showAlert('✅ Données effacées !', 'success', 3000);
+            }
+        }
+
+        function addCarrierMapping() {
+            const container = document.getElementById('carrierMappingContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'carrier-mapping-row';
+            newRow.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-bottom: 10px; align-items: end;';
+            newRow.innerHTML = `
+                <div>
+                    <input type="text" class="carrier-shopware-name" placeholder="Ex: Colissimo, Mondial Relay..." style="width: 100%;">
+                </div>
+                <div>
+                    <input type="number" class="carrier-odoo-id" placeholder="Ex: 5" style="width: 100%;">
+                </div>
+                <button type="button" onclick="removeCarrierMapping(this)" style="background: #dc3545; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 18px; width: 40px; height: 40px;">×</button>
+            `;
+            container.appendChild(newRow);
+        }
+
+        function removeCarrierMapping(button) {
+            const container = document.getElementById('carrierMappingContainer');
+            if (container.children.length > 1) {
+                button.parentElement.remove();
+            } else {
+                showAlert('⚠️ Il faut au moins un transporteur !', 'warning', 3000);
+            }
+        }
+
+        function showCarrierHelp() {
+            document.getElementById('carrierHelpModal').classList.remove('hidden');
+        }
+
+        function hideCarrierHelp() {
+            document.getElementById('carrierHelpModal').classList.add('hidden');
+        }
+
+        function getCarrierMapping() {
+            const rows = document.querySelectorAll('.carrier-mapping-row');
+            const mapping = {};
+            
+            rows.forEach(row => {
+                const shopwareName = row.querySelector('.carrier-shopware-name').value.trim();
+                const odooId = row.querySelector('.carrier-odoo-id').value.trim();
+                
+                if (shopwareName && odooId) {
+                    // Normaliser le nom (minuscules, sans accents)
+                    const normalizedName = shopwareName.toLowerCase()
+                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    mapping[normalizedName] = parseInt(odooId);
+                }
+            });
+            
+            return mapping;
+        }
+
+        function saveCarrierMapping(mapping) {
+            localStorage.setItem('carrierMapping', JSON.stringify(mapping));
+        }
+
+        function loadCarrierMapping() {
+            const saved = localStorage.getItem('carrierMapping');
+            if (!saved) return;
+            
+            try {
+                const mapping = JSON.parse(saved);
+                const container = document.getElementById('carrierMappingContainer');
+                container.innerHTML = '';
+                
+                Object.entries(mapping).forEach(([shopwareName, odooId], index) => {
+                    if (index === 0) {
+                        // Utiliser la première ligne existante
+                        const firstRow = document.querySelector('.carrier-mapping-row');
+                        if (firstRow) {
+                            firstRow.querySelector('.carrier-shopware-name').value = shopwareName;
+                            firstRow.querySelector('.carrier-odoo-id').value = odooId;
+                            container.appendChild(firstRow);
+                        }
+                    } else {
+                        // Ajouter une nouvelle ligne
+                        const newRow = document.createElement('div');
+                        newRow.className = 'carrier-mapping-row';
+                        newRow.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-bottom: 10px; align-items: end;';
+                        newRow.innerHTML = `
+                            <div>
+                                <input type="text" class="carrier-shopware-name" value="${shopwareName}" style="width: 100%;">
+                            </div>
+                            <div>
+                                <input type="number" class="carrier-odoo-id" value="${odooId}" style="width: 100%;">
+                            </div>
+                            <button type="button" onclick="removeCarrierMapping(this)" style="background: #dc3545; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 18px; width: 40px; height: 40px;">×</button>
+                        `;
+                        container.appendChild(newRow);
+                    }
+                });
+            } catch (e) {
+                console.error('Erreur chargement mapping:', e);
             }
         }
 
@@ -1091,6 +1250,9 @@
             if (savedOrderNote) document.getElementById('orderNote').value = savedOrderNote;
             if (savedOrderPrefix) document.getElementById('orderPrefix').value = savedOrderPrefix;
             if (savedAutoConfirm !== null) document.getElementById('autoConfirm').checked = savedAutoConfirm === 'true';
+            
+            // Charger le mapping des transporteurs
+            loadCarrierMapping();
         });
     </script>
 </body>
