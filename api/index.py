@@ -83,17 +83,35 @@ def get_orders():
         # Filtrer par date (côté serveur pour optimisation)
         if date_from:
             from datetime import datetime
-            date_from_dt = datetime.fromisoformat(date_from)
-            filtered_orders = [o for o in filtered_orders 
-                             if o.get('orderTime') and datetime.fromisoformat(o['orderTime'][:10]) >= date_from_dt]
-            print(f"Après filtre date_from: {len(filtered_orders)}")
+            try:
+                date_from_dt = datetime.fromisoformat(date_from)
+                print(f"Filtre date_from: {date_from_dt}")
+                
+                before_count = len(filtered_orders)
+                filtered_orders = [o for o in filtered_orders if o.get('orderTime')]
+                
+                # Filtrer en comparant juste la date (pas l'heure)
+                filtered_orders = [o for o in filtered_orders 
+                                 if datetime.fromisoformat(o['orderTime'][:19].replace('T', ' ')).date() >= date_from_dt.date()]
+                print(f"Après filtre date_from: {len(filtered_orders)} (avant: {before_count})")
+            except Exception as e:
+                print(f"Erreur filtre date_from: {e}")
         
         if date_to:
             from datetime import datetime
-            date_to_dt = datetime.fromisoformat(date_to)
-            filtered_orders = [o for o in filtered_orders 
-                             if o.get('orderTime') and datetime.fromisoformat(o['orderTime'][:10]) <= date_to_dt]
-            print(f"Après filtre date_to: {len(filtered_orders)}")
+            try:
+                date_to_dt = datetime.fromisoformat(date_to)
+                print(f"Filtre date_to: {date_to_dt}")
+                
+                before_count = len(filtered_orders)
+                filtered_orders = [o for o in filtered_orders if o.get('orderTime')]
+                
+                # Filtrer en comparant juste la date (pas l'heure)
+                filtered_orders = [o for o in filtered_orders 
+                                 if datetime.fromisoformat(o['orderTime'][:19].replace('T', ' ')).date() <= date_to_dt.date()]
+                print(f"Après filtre date_to: {len(filtered_orders)} (avant: {before_count})")
+            except Exception as e:
+                print(f"Erreur filtre date_to: {e}")
         
         return jsonify({
             'success': True,
