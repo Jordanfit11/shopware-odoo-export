@@ -38,12 +38,15 @@ def get_orders():
         print(f"Date de: {date_from}")
         print(f"Date à: {date_to}")
         
-        # Appeler Shopware
+        # Appeler Shopware avec expand pour avoir les détails
         url = f"{SHOPWARE_URL}/api/orders"
         response = requests.get(
             url,
             auth=HTTPDigestAuth(API_USERNAME, API_KEY),
-            params={'limit': limit},
+            params={
+                'limit': limit,
+                'expand': 'dispatch,customer,billing,details'
+            },
             timeout=60
         )
         
