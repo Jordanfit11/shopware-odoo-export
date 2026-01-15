@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopware → Odoo - Version Finale</title>
+    <title>🔍 DEBUG Transporteurs Shopware</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -21,1296 +21,260 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         h1 { color: #667eea; font-size: 2.5em; margin-bottom: 10px; }
-        .subtitle { color: #666; margin-bottom: 40px; }
         .section {
-            margin-bottom: 30px;
+            margin: 30px 0;
             padding: 25px;
             background: #f8f9fa;
             border-radius: 15px;
         }
-        .section h2 { color: #333; margin-bottom: 20px; font-size: 1.4em; }
-        .form-group { margin-bottom: 20px; }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 600;
-        }
-        select, input {
+        label { display: block; margin-bottom: 8px; color: #555; font-weight: 600; }
+        input {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
             font-size: 16px;
-            transition: border 0.3s;
+            margin-bottom: 15px;
         }
-        select:focus, input:focus { outline: none; border-color: #667eea; }
-        .btn {
+        button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px 30px;
+            padding: 15px 40px;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             cursor: pointer;
             width: 100%;
-            transition: transform 0.2s, box-shadow 0.2s;
             margin-top: 10px;
         }
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
-        }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-secondary { background: #6c757d; }
-        .btn-success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
-        .btn-warning { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); }
-        .alert {
-            padding: 15px 50px 15px 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            animation: slideIn 0.3s;
-            position: relative;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .alert-close {
-            position: absolute;
-            top: 50%;
-            right: 15px;
-            transform: translateY(-50%);
-            background: rgba(0,0,0,0.1);
-            border: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            font-size: 16px;
-            cursor: pointer;
-            color: inherit;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-        .alert-close:hover {
-            background: rgba(0,0,0,0.2);
-        }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .alert-success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
-        .alert-error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
-        .alert-info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
-        .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .stat-box {
-            background: white;
+        button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .results {
+            margin-top: 30px;
             padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .stat-number {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #667eea;
-        }
-        .stat-label { color: #666; margin-top: 5px; font-size: 0.9em; }
-        .hidden { display: none; }
-        .upload-zone {
-            border: 2px dashed #667eea;
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
             background: white;
-        }
-        .upload-zone:hover { background: #f8f9fa; border-color: #764ba2; }
-        .upload-zone.has-file { border-color: #28a745; background: #d4edda; }
-        .progress-bar {
-            width: 100%;
-            height: 10px;
-            background: #e0e0e0;
+            border: 2px solid #667eea;
             border-radius: 10px;
-            overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            width: 0%;
-            transition: width 0.3s;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
-            font-size: 14px;
+            margin-top: 20px;
         }
         th, td {
-            padding: 10px;
+            padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #ddd;
         }
         th {
             background: #667eea;
             color: white;
             font-weight: 600;
         }
-        tr:hover { background: #f8f9fa; }
-        small { display: block; margin-top: 5px; color: #666; font-size: 0.85em; }
-        .debug-box {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
+        tr:hover { background: #f5f5f5; }
+        .code {
+            background: #f4f4f4;
             padding: 15px;
-            margin-top: 15px;
-            font-family: monospace;
-            font-size: 13px;
-            max-height: 300px;
-            overflow-y: auto;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            white-space: pre-wrap;
         }
+        .highlight { background: yellow; padding: 2px 5px; font-weight: bold; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-number { font-size: 2.5em; font-weight: bold; }
+        .stat-label { font-size: 0.9em; opacity: 0.9; margin-top: 5px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔄 Shopware → Odoo</h1>
-        <p class="subtitle">Version Finale - Export par Date & Statut</p>
+        <h1>🔍 DEBUG Transporteurs Shopware</h1>
+        <p style="color: #666; margin-bottom: 40px;">Outil pour voir EXACTEMENT ce que Shopware envoie comme noms de transporteurs</p>
 
-        <div id="alerts"></div>
-
-        <!-- Configuration -->
         <div class="section">
-            <h2>⚙️ Configuration API</h2>
-            <div class="form-group">
-                <label for="apiUrl">URL API Vercel</label>
-                <input type="text" id="apiUrl" placeholder="https://shopware-odoo-api.vercel.app/api">
-            </div>
-            <button class="btn btn-secondary" onclick="testConnection()">
-                🔍 Tester Shopware
-            </button>
-            <button class="btn btn-warning" onclick="debugStatuses()">
-                🐛 Debug Statuts (voir quels statuts existent)
-            </button>
-            <div id="debugInfo" class="debug-box hidden"></div>
-        </div>
-
-        <!-- Filtres Export -->
-        <div class="section">
-            <h2>📦 Filtres d'Export Shopware</h2>
+            <h2>🔐 Configuration Shopware</h2>
+            <label>URL Shopware</label>
+            <input type="text" id="url" value="https://fr.hau.vonaffenfels.de" placeholder="https://votre-shop.com">
             
-            <div class="form-group">
-                <label>🗓️ Période (optionnel)</label>
-                <div class="form-row">
-                    <div>
-                        <input type="date" id="dateFrom" placeholder="Date de début">
-                        <small>Date de début</small>
-                    </div>
-                    <div>
-                        <input type="date" id="dateTo" placeholder="Date de fin">
-                        <small>Date de fin</small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="statusFilter">📊 Statut (optionnel)</label>
-                <select id="statusFilter">
-                    <option value="">Tous les statuts</option>
-                    <option value="0">0 - Open (Ouvert)</option>
-                    <option value="1">1 - In process (En cours)</option>
-                    <option value="2">2 - Completely delivered (Complètement livré)</option>
-                    <option value="7">7 - Cancelled (Annulé)</option>
-                    <option value="8">8 - Clarification needed (Clarification nécessaire)</option>
-                </select>
-                <small>💡 Utilisez "Debug Statuts" pour voir tous les statuts disponibles dans VOTRE Shopware</small>
-            </div>
+            <label>API Username</label>
+            <input type="text" id="username" value="odoosync">
             
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="excludeZeroAmount" checked style="width: auto; margin-right: 10px;">
-                    Exclure les commandes à 0€ (cartes cadeaux, etc.)
-                </label>
-            </div>
+            <label>API Key</label>
+            <input type="password" id="apikey" value="T8dbJHHQGtrJtG4kGXuxFW2Z4EM7uDMD5cyhlkWf">
             
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="excludeDelivered" checked style="width: auto; margin-right: 10px;">
-                    Exclure les commandes "Completely delivered"
-                </label>
-                <small>Empêche d'importer les commandes déjà livrées</small>
-            </div>
-
-            <button class="btn" onclick="exportShopware()" id="exportBtn">
-                🚀 Exporter de Shopware
-            </button>
-
-            <div id="shopwareStats" class="hidden">
-                <div class="stats" id="statsShopware"></div>
-            </div>
-        </div>
-
-        <!-- Mapping -->
-        <div class="section hidden" id="mappingSection">
-            <h2>🗺️ Mapping avec base Odoo</h2>
-            <div class="upload-zone" id="odooUploadZone" onclick="document.getElementById('odooFile').click()">
-                <p id="odooUploadText">📂 Cliquez pour charger votre export Odoo<br>(Excel ou CSV)</p>
-                <input type="file" id="odooFile" accept=".xlsx,.xls,.csv" style="display: none;">
-            </div>
-
-            <div id="columnSelectors" class="hidden" style="margin-top: 20px;">
-                <div class="alert alert-info">
-                    ✅ Fichier chargé ! Sélectionnez les colonnes :
-                </div>
-                <div class="form-group">
-                    <label for="odooRefColumnSelect">Colonne "Référence interne Odoo"</label>
-                    <select id="odooRefColumnSelect" onchange="updateMappingPreview()">
-                        <option value="">-- Sélectionnez --</option>
-                    </select>
-                    <small>Ex: default_code, Référence interne</small>
-                </div>
-                <div class="form-group">
-                    <label for="supplierRefColumnSelect">Colonne "Code fournisseur"</label>
-                    <select id="supplierRefColumnSelect" onchange="updateMappingPreview()">
-                        <option value="">-- Sélectionnez --</option>
-                    </select>
-                    <small>Ex: Code produit fournisseur, supplier_sku</small>
-                </div>
-                <div id="mappingPreview" class="hidden" style="padding: 15px; background: #fff; border-radius: 10px; margin-top: 15px;">
-                    <strong>📋 Aperçu :</strong>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Code Shopware</th>
-                                <th style="width: 50px; text-align: center;">→</th>
-                                <th>Référence Odoo</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mappingPreviewBody"></tbody>
-                    </table>
-                </div>
-                <button class="btn" onclick="applyMapping()" style="margin-top: 15px;">
-                    🗺️ Appliquer le mapping
-                </button>
-            </div>
-            <div id="mappingStats" class="hidden">
-                <div class="stats" id="statMapping"></div>
-            </div>
-        </div>
-
-        <!-- Téléchargement -->
-        <div class="section hidden" id="downloadSection">
-            <h2>💾 Téléchargement</h2>
-            <button class="btn" onclick="downloadExcel()">
-                📥 Télécharger Excel
+            <button onclick="debugTransporteurs()" id="debugBtn">
+                🔍 ANALYSER LES TRANSPORTEURS
             </button>
         </div>
 
-        <!-- Import Odoo -->
-        <div class="section hidden" id="importSection">
-            <h2>📥 Import direct dans Odoo (optionnel)</h2>
-            
-            <div class="form-group">
-                <label for="odooUrl">URL Odoo</label>
-                <input type="text" id="odooUrl" placeholder="https://votre-odoo.odoo.com">
-            </div>
-
-            <div class="form-group">
-                <label for="odooDb">Base de données</label>
-                <input type="text" id="odooDb" placeholder="Nom de la base">
-            </div>
-
-            <div class="form-group">
-                <label for="odooUsername">Login Odoo</label>
-                <input type="text" id="odooUsername" placeholder="votre@email.com">
-            </div>
-
-            <div class="form-group">
-                <label for="odooApiKey">Clé API Odoo</label>
-                <input type="password" id="odooApiKey" placeholder="Votre clé API">
-            </div>
-
-            <h3 style="margin-top: 30px; margin-bottom: 15px;">⚙️ Options avancées</h3>
-
-            <div class="form-group">
-                <label for="orderTag">Étiquette pour les commandes E-shop</label>
-                <input type="text" id="orderTag" placeholder="E-shop" value="E-shop Shopware">
-                <small>Toutes les commandes importées auront cette étiquette</small>
-            </div>
-
-            <div class="form-group">
-                <label for="defaultCarrier">Transporteur par défaut (ID Odoo)</label>
-                <input type="number" id="defaultCarrier" placeholder="Ex: 1">
-                <small>Laissez vide si aucun. Trouvez l'ID dans Odoo → Inventaire → Configuration → Transporteurs</small>
-            </div>
-
-            <div class="form-group">
-                <label for="defaultWarehouse">Entrepôt par défaut (ID Odoo)</label>
-                <input type="number" id="defaultWarehouse" placeholder="Ex: 1">
-                <small>Laissez vide pour l'entrepôt par défaut</small>
-            </div>
-
-            <div class="form-group">
-                <label for="orderNote">Note interne automatique</label>
-                <input type="text" id="orderNote" placeholder="Ex: Commande importée depuis Shopware">
-                <small>Cette note apparaîtra sur toutes les commandes</small>
-            </div>
-
-            <div class="form-group">
-                <label for="orderPrefix">Préfixe pour les numéros de commande</label>
-                <input type="text" id="orderPrefix" placeholder="Ex: ESHOP" value="ESHOP">
-                <small>Les commandes seront créées avec ce préfixe (ex: ESHOP/2026/00001 au lieu de WH/ESHOP/00007)</small>
-            </div>
-
-            <h3 style="margin-top: 30px; margin-bottom: 15px;">🚚 Mapping des transporteurs</h3>
-            <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">
-                Associez les transporteurs Shopware avec les méthodes de livraison Odoo. 
-                <a href="#" onclick="showCarrierHelp(); return false;" style="color: #667eea;">Comment trouver les IDs Odoo ?</a>
-            </p>
-
-            <div id="carrierMappingContainer">
-                <div class="carrier-mapping-row" style="display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-bottom: 10px; align-items: end;">
-                    <div>
-                        <label style="font-size: 0.85em;">Nom transporteur Shopware</label>
-                        <input type="text" class="carrier-shopware-name" placeholder="Ex: Colissimo, Mondial Relay..." style="width: 100%;">
-                    </div>
-                    <div>
-                        <label style="font-size: 0.85em;">ID Méthode Odoo</label>
-                        <input type="number" class="carrier-odoo-id" placeholder="Ex: 5" style="width: 100%;">
-                    </div>
-                    <button type="button" class="btn-remove-carrier" onclick="removeCarrierMapping(this)" style="background: #dc3545; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 18px; width: 40px; height: 40px;">×</button>
-                </div>
-            </div>
-
-            <button type="button" class="btn btn-secondary" onclick="addCarrierMapping()" style="margin-top: 10px;">
-                ➕ Ajouter un transporteur
-            </button>
-
-            <div id="carrierHelpModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center;" onclick="if(event.target === this) hideCarrierHelp()">
-                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; max-height: 80vh; overflow-y: auto;" onclick="event.stopPropagation()">
-                    <h3 style="margin-bottom: 15px;">📋 Comment trouver les IDs des méthodes Odoo ?</h3>
-                    <ol style="line-height: 2; color: #333;">
-                        <li><strong>Odoo</strong> → <strong>Inventaire</strong> → <strong>Configuration</strong> → <strong>Méthodes de livraison</strong></li>
-                        <li>Cliquez sur une méthode (ex: "Sendcloud - Colissimo")</li>
-                        <li>Regardez l'URL : <code style="background: #f0f0f0; padding: 2px 5px;">...&id=<strong>5</strong>&...</code></li>
-                        <li>L'<strong>ID = 5</strong> dans cet exemple</li>
-                        <li>Notez l'ID pour chaque transporteur</li>
-                    </ol>
-                    <p style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 10px; color: #856404;">
-                        💡 <strong>Astuce :</strong> Créez d'abord toutes vos méthodes Sendcloud dans Odoo, puis notez leurs IDs !
-                    </p>
-                    <button class="btn" onclick="hideCarrierHelp()" style="margin-top: 20px; width: 100%;">Fermer</button>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="autoConfirm" checked style="width: auto; margin-right: 10px;">
-                    Confirmer automatiquement les commandes (passer de Devis → Commande)
-                </label>
-                <small>Si coché, les commandes seront directement confirmées et prêtes pour le picking</small>
-            </div>
-
-            <button class="btn btn-success" onclick="importToOdoo()" id="importBtn">
-                🎯 Importer dans Odoo
-            </button>
-
-            <button class="btn btn-secondary" onclick="clearSavedCredentials()" style="margin-top: 10px;">
-                🗑️ Effacer les données sauvegardées
-            </button>
-
-            <div class="progress-bar hidden" id="importProgress" style="margin-top: 20px;">
-                <div class="progress-fill" id="importProgressFill"></div>
-            </div>
-
-            <div id="importStats" class="hidden" style="margin-top: 20px;">
-                <div class="stats" id="statsImport"></div>
-            </div>
-
-            <div id="importReport" class="hidden" style="margin-top: 30px;">
-                <h3>📋 Rapport d'import détaillé</h3>
-                
-                <div id="successSection" class="hidden" style="margin-top: 20px;">
-                    <div style="background: #d4edda; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                        <strong>✅ Commandes créées avec succès</strong>
-                    </div>
-                    <table id="successTable">
-                        <thead>
-                            <tr>
-                                <th>N° Commande</th>
-                                <th>ID Odoo</th>
-                                <th>Client</th>
-                                <th>Lignes</th>
-                                <th>Produits non trouvés</th>
-                                <th>Lien</th>
-                            </tr>
-                        </thead>
-                        <tbody id="successTableBody"></tbody>
-                    </table>
-                </div>
-
-                <div id="errorSection" class="hidden" style="margin-top: 20px;">
-                    <div style="background: #f8d7da; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                        <strong>❌ Erreurs d'import</strong>
-                    </div>
-                    <table id="errorTable">
-                        <thead>
-                            <tr>
-                                <th style="width: 30%;">N° Commande</th>
-                                <th style="width: 70%;">Erreur</th>
-                            </tr>
-                        </thead>
-                        <tbody id="errorTableBody"></tbody>
-                    </table>
-                </div>
-
-                <div id="mappingIssuesSection" class="hidden" style="margin-top: 20px;">
-                    <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                        <strong>⚠️ Problèmes de mapping (produits non trouvés dans Odoo)</strong>
-                        <p style="margin-top: 10px; color: #856404; font-size: 0.9em;">
-                            Ces produits existent dans Shopware mais n'ont pas été trouvés dans Odoo avec la référence mappée.
-                        </p>
-                    </div>
-                    <table id="mappingTable">
-                        <thead>
-                            <tr>
-                                <th>Référence Shopware</th>
-                                <th>Référence Odoo (mappée)</th>
-                                <th>Nom produit</th>
-                                <th>Occurences</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mappingTableBody"></tbody>
-                    </table>
-                    <button class="btn" onclick="downloadMappingIssues()" style="margin-top: 15px;">
-                        📥 Télécharger la liste des produits non mappés
-                    </button>
-                </div>
-            </div>
-        </div>
+        <div id="results" class="results" style="display: none;"></div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script>
-        let ordersData = [];
-        let mappedData = [];
-        let odooMapping = {};
-        let odooFileData = [];
-        let availableColumns = [];
+        async function debugTransporteurs() {
+            const url = document.getElementById('url').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const apikey = document.getElementById('apikey').value.trim();
+            const btn = document.getElementById('debugBtn');
+            const resultsDiv = document.getElementById('results');
 
-        function showAlert(msg, type = 'info', duration = 0) {
-            const alerts = document.getElementById('alerts');
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type}`;
-            
-            // Icônes selon le type
-            const icons = {
-                'success': '✅',
-                'error': '❌',
-                'warning': '⚠️',
-                'info': 'ℹ️'
-            };
-            
-            alert.innerHTML = `
-                <strong>${icons[type] || ''}</strong> ${msg}
-                <button class="alert-close" onclick="this.parentElement.remove()">×</button>
-            `;
-            
-            alerts.appendChild(alert);
-            
-            // Supprimer automatiquement après X secondes (si duration > 0)
-            if (duration > 0) {
-                setTimeout(() => {
-                    if (alert.parentElement) {
-                        alert.style.opacity = '0';
-                        alert.style.transform = 'translateX(100%)';
-                        setTimeout(() => alert.remove(), 300);
-                    }
-                }, duration);
-            }
-            
-            // Scroll vers le haut pour voir l'alerte
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        async function testConnection() {
-            const apiUrl = document.getElementById('apiUrl').value.trim();
-            if (!apiUrl) {
-                showAlert('⚠️ Entrez l\'URL API', 'error');
-                return;
-            }
-            try {
-                const res = await fetch(`${apiUrl}/test-connection`);
-                const data = await res.json();
-                if (data.success) {
-                    showAlert(`✅ Connexion OK ! ${data.total} commandes disponibles`, 'success');
-                    localStorage.setItem('apiUrl', apiUrl);
-                } else {
-                    showAlert(`❌ ${data.error}`, 'error');
-                }
-            } catch (err) {
-                showAlert(`❌ ${err.message}`, 'error');
-            }
-        }
-
-        async function debugStatuses() {
-            const apiUrl = document.getElementById('apiUrl').value.trim() || localStorage.getItem('apiUrl');
-            if (!apiUrl) {
-                showAlert('⚠️ Configurez l\'API d\'abord', 'error');
-                return;
-            }
-            try {
-                const res = await fetch(`${apiUrl}/debug-statuses`);
-                const data = await res.json();
-                if (data.success) {
-                    const debugBox = document.getElementById('debugInfo');
-                    let html = `<strong>📊 Statuts trouvés dans Shopware (sur ${data.total_orders} commandes):</strong><br><br>`;
-                    
-                    for (let [status, count] of Object.entries(data.status_counts)) {
-                        const examples = data.status_examples[status].join(', ');
-                        html += `<strong>Statut ${status}:</strong> ${count} commandes<br>`;
-                        html += `Exemples: ${examples}<br><br>`;
-                    }
-                    
-                    debugBox.innerHTML = html;
-                    debugBox.classList.remove('hidden');
-                    showAlert('✅ Debug terminé ! Regardez les statuts ci-dessus', 'success');
-                } else {
-                    showAlert(`❌ ${data.error}`, 'error');
-                }
-            } catch (err) {
-                showAlert(`❌ ${err.message}`, 'error');
-            }
-        }
-
-        async function exportShopware() {
-            const apiUrl = document.getElementById('apiUrl').value.trim() || localStorage.getItem('apiUrl');
-            if (!apiUrl) {
-                showAlert('⚠️ Configurez l\'API', 'error');
+            if (!url || !username || !apikey) {
+                alert('⚠️ Remplissez tous les champs !');
                 return;
             }
 
-            const btn = document.getElementById('exportBtn');
             btn.disabled = true;
-            btn.textContent = '⏳ Export en cours...';
-
-            const statusValue = document.getElementById('statusFilter').value;
-            const dateFrom = document.getElementById('dateFrom').value;
-            const dateTo = document.getElementById('dateTo').value;
-
-            // Envoyer le statut tel quel (nom ou vide)
-            let status = statusValue || null;
-
-            console.log('Filtres:', { status, dateFrom, dateTo });
+            btn.textContent = '⏳ Analyse en cours...';
+            resultsDiv.style.display = 'none';
 
             try {
-                const res = await fetch(`${apiUrl}/orders`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        status, 
-                        date_from: dateFrom,
-                        date_to: dateTo,
-                        limit: 5000
-                    })
+                // Appel API Shopware
+                const response = await fetch(`${url}/api/orders?limit=100`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Digest username="' + username + '"',
+                        'Content-Type': 'application/json'
+                    }
                 });
 
-                const data = await res.json();
-
-                if (data.success) {
-                    ordersData = transformOrders(data.orders);
-                    
-                    // Filtres côté client
-                    const excludeZero = document.getElementById('excludeZeroAmount').checked;
-                    const excludeDelivered = document.getElementById('excludeDelivered').checked;
-                    
-                    let filteredCount = 0;
-                    
-                    if (excludeZero) {
-                        const beforeCount = ordersData.length;
-                        ordersData = ordersData.filter(order => {
-                            const total = parseFloat(order.total_price) || 0;
-                            return total > 0;
-                        });
-                        filteredCount += beforeCount - ordersData.length;
-                    }
-                    
-                    if (excludeDelivered) {
-                        const beforeCount = ordersData.length;
-                        ordersData = ordersData.filter(order => {
-                            const status = (order.order_status || '').toLowerCase();
-                            return !status.includes('delivered') && !status.includes('livr');
-                        });
-                        filteredCount += beforeCount - ordersData.length;
-                    }
-                    
-                    // Filtrer par date côté client si nécessaire
-                    if (dateFrom || dateTo) {
-                        ordersData = ordersData.filter(order => {
-                            const orderDate = new Date(order.order_date);
-                            if (dateFrom && orderDate < new Date(dateFrom)) return false;
-                            if (dateTo && orderDate > new Date(dateTo + 'T23:59:59')) return false;
-                            return true;
-                        });
-                    }
-
-                    document.getElementById('shopwareStats').classList.remove('hidden');
-                    document.getElementById('statsShopware').innerHTML = `
-                        <div class="stat-box"><div class="stat-number">${data.filtered}</div><div class="stat-label">Commandes API</div></div>
-                        <div class="stat-box"><div class="stat-number">${ordersData.length}</div><div class="stat-label">Lignes finales</div></div>
-                        ${filteredCount > 0 ? `<div class="stat-box"><div class="stat-number">${filteredCount}</div><div class="stat-label">Filtrées</div></div>` : ''}
-                    `;
-                    
-                    document.getElementById('mappingSection').classList.remove('hidden');
-                    document.getElementById('downloadSection').classList.remove('hidden');
-                    
-                    let message = `${ordersData.length} lignes exportées !`;
-                    if (filteredCount > 0) message += ` (${filteredCount} filtrées)`;
-                    showAlert(message, 'success', 3000);
-                } else {
-                    showAlert(data.error, 'error', 0);
+                if (!response.ok) {
+                    throw new Error(`Erreur API: ${response.status}`);
                 }
-            } catch (err) {
-                showAlert(`❌ ${err.message}`, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '🚀 Exporter de Shopware';
-            }
-        }
 
-        function transformOrders(orders) {
-            const rows = [];
-            orders.forEach(o => {
-                const num = o.number || o.id || 'NO_NUMBER';
-                const date = o.orderTime || '';
-                const billing = o.billing || {};
-                const customer = o.customer || {};
-                const name = `${billing.firstName || ''} ${billing.lastName || ''}`.trim();
-                const email = customer.email || '';
-                const details = o.details || [];
-                
-                details.forEach(d => {
-                    // Calculer le prix total de la ligne
-                    const quantity = parseFloat(d.quantity) || 0;
-                    const unitPrice = parseFloat(d.price) || 0;
-                    const lineTotal = quantity * unitPrice;
+                const result = await response.json();
+                const orders = result.data || [];
+
+                // Analyser les transporteurs
+                const transporteurs = new Map();
+                const ordersData = [];
+
+                orders.forEach(order => {
+                    const dispatchName = order.dispatch?.name || '[VIDE]';
+                    const dispatchId = order.dispatch?.id || 'N/A';
                     
-                    // Améliorer le numéro de commande
-                    let displayNumber = num;
-                    if (!num || num === '0' || num === 0) {
-                        // Si pas de numéro, on affiche une indication
-                        displayNumber = `[Sans N°] ${email}_${date.split('T')[0]}`;
+                    if (!transporteurs.has(dispatchName)) {
+                        transporteurs.set(dispatchName, {
+                            count: 0,
+                            id: dispatchId,
+                            orders: []
+                        });
                     }
                     
-                    rows.push({
-                        order_number: displayNumber,
-                        order_date: date,
-                        customer_name: name,
-                        customer_email: email,
-                        product_ref_shopware: d.articleNumber || '',
-                        product_ref_odoo: d.articleNumber || '',
-                        product_name: d.articleName || '',
-                        quantity: quantity,
-                        unit_price: unitPrice,
-                        total_price: lineTotal,
-                        order_status: o.orderStatus?.name || '',
-                        dispatch_name: o.dispatch?.name || ''
+                    const info = transporteurs.get(dispatchName);
+                    info.count++;
+                    info.orders.push(order.number || 'NO_NUMBER');
+
+                    ordersData.push({
+                        number: order.number || 'NO_NUMBER',
+                        date: order.orderTime || '',
+                        dispatch: dispatchName,
+                        dispatchId: dispatchId
                     });
                 });
-            });
-            return rows;
-        }
 
-        document.getElementById('odooFile').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            document.getElementById('odooUploadZone').classList.add('has-file');
-            document.getElementById('odooUploadText').textContent = `✅ ${file.name}`;
-            showAlert('📊 Analyse...', 'info');
-            try {
-                if (file.name.endsWith('.csv')) {
-                    Papa.parse(file, {
-                        header: true,
-                        complete: (res) => handleOdooFileLoaded(res.data),
-                        error: (err) => showAlert(`❌ ${err.message}`, 'error')
+                // Afficher les résultats
+                let html = '<h2>📊 RÉSULTATS DE L\'ANALYSE</h2>';
+
+                // Stats
+                html += '<div class="stats">';
+                html += `<div class="stat-card"><div class="stat-number">${orders.length}</div><div class="stat-label">Commandes analysées</div></div>`;
+                html += `<div class="stat-card"><div class="stat-number">${transporteurs.size}</div><div class="stat-label">Transporteurs différents</div></div>`;
+                html += '</div>';
+
+                // Liste des transporteurs uniques
+                html += '<h3>🚚 Transporteurs trouvés (NOMS EXACTS) :</h3>';
+                html += '<div class="code">';
+                Array.from(transporteurs.entries())
+                    .sort((a, b) => b[1].count - a[1].count)
+                    .forEach(([name, info]) => {
+                        html += `<span class="highlight">"${name}"</span> (ID: ${info.id}) → ${info.count} commandes\n`;
                     });
-                } else {
-                    const data = await file.arrayBuffer();
-                    const wb = XLSX.read(data);
-                    const ws = wb.Sheets[wb.SheetNames[0]];
-                    const json = XLSX.utils.sheet_to_json(ws);
-                    handleOdooFileLoaded(json);
-                }
-            } catch (err) {
-                showAlert(`❌ ${err.message}`, 'error');
-            }
-        });
+                html += '</div>';
 
-        function handleOdooFileLoaded(data) {
-            if (!data || data.length === 0) {
-                showAlert('⚠️ Fichier vide', 'error');
-                return;
-            }
-            odooFileData = data;
-            availableColumns = Object.keys(data[0]);
-            console.log('Colonnes:', availableColumns);
-            
-            const s1 = document.getElementById('odooRefColumnSelect');
-            const s2 = document.getElementById('supplierRefColumnSelect');
-            s1.innerHTML = '<option value="">-- Sélectionnez --</option>';
-            s2.innerHTML = '<option value="">-- Sélectionnez --</option>';
-            
-            availableColumns.forEach(col => {
-                s1.innerHTML += `<option value="${col}">${col}</option>`;
-                s2.innerHTML += `<option value="${col}">${col}</option>`;
-            });
-            
-            autoSelectColumns(s1, s2);
-            document.getElementById('columnSelectors').classList.remove('hidden');
-            showAlert(`✅ ${data.length} produits | ${availableColumns.length} colonnes`, 'success');
-        }
-
-        function autoSelectColumns(s1, s2) {
-            const p1 = ['default_code', 'internal', 'référence', 'reference'];
-            const p2 = ['supplier', 'vendor', 'fournisseur', 'code produit'];
-            availableColumns.forEach(col => {
-                const lower = col.toLowerCase();
-                if (!s1.value) {
-                    for (let p of p1) {
-                        if (lower.includes(p)) {
-                            s1.value = col;
-                            break;
-                        }
+                // Recommandations mapping
+                html += '<h3>💡 Configuration recommandée pour Odoo :</h3>';
+                html += '<div class="code" style="background: #e8f5e9;">';
+                html += '<strong>Dans l\'onglet "Mapping Transporteurs" d\'Odoo, créez :</strong>\n\n';
+                
+                const uniqueNames = Array.from(transporteurs.keys()).filter(n => n !== '[VIDE]');
+                uniqueNames.forEach(name => {
+                    // Extraire un mot-clé simple
+                    let keyword = name.toLowerCase();
+                    if (keyword.match(/^\d+\./)) {
+                        keyword = keyword.split('.')[0] + '.';
+                    } else if (keyword.includes('colissimo')) {
+                        keyword = keyword.includes('point') || keyword.includes('relais') ? 'colissimo relais' : 'colissimo domicile';
+                    } else if (keyword.includes('mondial')) {
+                        keyword = 'mondial';
+                    } else if (keyword.includes('tnt')) {
+                        keyword = 'tnt';
                     }
-                }
-                if (!s2.value) {
-                    for (let p of p2) {
-                        if (lower.includes(p)) {
-                            s2.value = col;
-                            break;
-                        }
-                    }
-                }
-            });
-            updateMappingPreview();
-        }
-
-        function updateMappingPreview() {
-            const c1 = document.getElementById('odooRefColumnSelect').value;
-            const c2 = document.getElementById('supplierRefColumnSelect').value;
-            if (!c1 || !c2) return;
-            
-            const body = document.getElementById('mappingPreviewBody');
-            body.innerHTML = '';
-            let count = 0;
-            
-            for (let i = 0; i < Math.min(5, odooFileData.length); i++) {
-                const row = odooFileData[i];
-                const sup = String(row[c2] || '').replace('.0', '').trim();
-                const odoo = String(row[c1] || '').replace('.0', '').trim();
-                if (sup && odoo) {
-                    body.innerHTML += `<tr><td>${sup}</td><td style="text-align:center;">→</td><td>${odoo}</td></tr>`;
-                    count++;
-                }
-            }
-            
-            if (count > 0) {
-                document.getElementById('mappingPreview').classList.remove('hidden');
-            } else {
-                showAlert('⚠️ Aucune correspondance', 'warning');
-            }
-        }
-
-        function applyMapping() {
-            const c1 = document.getElementById('odooRefColumnSelect').value;
-            const c2 = document.getElementById('supplierRefColumnSelect').value;
-            if (!c1 || !c2) {
-                showAlert('⚠️ Sélectionnez les colonnes', 'error');
-                return;
-            }
-            
-            odooMapping = {};
-            let count = 0;
-            
-            odooFileData.forEach(row => {
-                const sup = String(row[c2] || '').replace('.0', '').trim();
-                const odoo = String(row[c1] || '').replace('.0', '').trim();
-                if (sup && odoo) {
-                    odooMapping[sup] = odoo;
-                    count++;
-                }
-            });
-            
-            console.log(`Mapping: ${count} entrées`);
-            
-            if (count === 0) {
-                showAlert('❌ Aucun mapping créé', 'error');
-                return;
-            }
-            
-            let mapped = 0, unmapped = 0;
-            mappedData = ordersData.map(row => {
-                const shopRef = String(row.product_ref_shopware).trim();
-                if (odooMapping[shopRef]) {
-                    row.product_ref_odoo = odooMapping[shopRef];
-                    mapped++;
-                } else {
-                    unmapped++;
-                }
-                return row;
-            });
-            
-            document.getElementById('mappingStats').classList.remove('hidden');
-            document.getElementById('statMapping').innerHTML = `
-                <div class="stat-box"><div class="stat-number">${mapped}</div><div class="stat-label">Mappés</div></div>
-                <div class="stat-box"><div class="stat-number">${unmapped}</div><div class="stat-label">Non mappés</div></div>
-            `;
-            
-            // Afficher la section import
-            document.getElementById('importSection').classList.remove('hidden');
-            
-            showAlert(`✅ ${mapped} produits mappés !`, 'success');
-        }
-
-        async function importToOdoo() {
-            const apiUrl = document.getElementById('apiUrl').value.trim() || localStorage.getItem('apiUrl');
-            const odooUrl = document.getElementById('odooUrl').value.trim();
-            const odooDb = document.getElementById('odooDb').value.trim();
-            const odooUsername = document.getElementById('odooUsername').value.trim();
-            const odooApiKey = document.getElementById('odooApiKey').value.trim();
-            
-            // Options avancées
-            const orderTag = document.getElementById('orderTag').value.trim();
-            const defaultCarrier = document.getElementById('defaultCarrier').value.trim();
-            const defaultWarehouse = document.getElementById('defaultWarehouse').value.trim();
-            const orderNote = document.getElementById('orderNote').value.trim();
-            const orderPrefix = document.getElementById('orderPrefix').value.trim();
-            const autoConfirm = document.getElementById('autoConfirm').checked;
-            
-            // Récupérer le mapping des transporteurs
-            const carrierMapping = getCarrierMapping();
-
-            if (!apiUrl) {
-                showAlert('⚠️ API non configurée', 'error', 0);
-                return;
-            }
-
-            if (!odooUrl || !odooDb || !odooUsername || !odooApiKey) {
-                showAlert('⚠️ Complétez tous les champs Odoo', 'error', 0);
-                return;
-            }
-            
-            // Sauvegarder les credentials Odoo pour la prochaine fois
-            localStorage.setItem('odooUrl', odooUrl);
-            localStorage.setItem('odooDb', odooDb);
-            localStorage.setItem('odooUsername', odooUsername);
-            localStorage.setItem('odooApiKey', odooApiKey);
-            localStorage.setItem('orderTag', orderTag);
-            localStorage.setItem('defaultCarrier', defaultCarrier);
-            localStorage.setItem('defaultWarehouse', defaultWarehouse);
-            localStorage.setItem('orderNote', orderNote);
-            localStorage.setItem('orderPrefix', orderPrefix);
-            localStorage.setItem('autoConfirm', autoConfirm);
-            saveCarrierMapping(carrierMapping);
-
-            if (mappedData.length === 0) {
-                showAlert('⚠️ Aucune donnée à importer. Appliquez d\'abord le mapping.', 'error');
-                return;
-            }
-
-            const btn = document.getElementById('importBtn');
-            btn.disabled = true;
-            btn.textContent = '⏳ Import en cours...';
-
-            const prog = document.getElementById('importProgress');
-            const fill = document.getElementById('importProgressFill');
-            prog.classList.remove('hidden');
-            fill.style.width = '30%';
-
-            try {
-                const res = await fetch(`${apiUrl}/import-to-odoo`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        orders: mappedData,
-                        odoo_url: odooUrl,
-                        odoo_db: odooDb,
-                        odoo_username: odooUsername,
-                        odoo_api_key: odooApiKey,
-                        // Options avancées
-                        order_tag: orderTag,
-                        default_carrier: defaultCarrier ? parseInt(defaultCarrier) : null,
-                        default_warehouse: defaultWarehouse ? parseInt(defaultWarehouse) : null,
-                        order_note: orderNote,
-                        order_prefix: orderPrefix,
-                        auto_confirm: autoConfirm,
-                        carrier_mapping: carrierMapping
-                    })
+                    
+                    html += `Nom Shopware: <span class="highlight">${keyword}</span>\n`;
+                    html += `Méthode Odoo: [Sélectionner votre méthode pour "${name}"]\n\n`;
                 });
+                html += '</div>';
 
-                fill.style.width = '70%';
-                const data = await res.json();
-                fill.style.width = '100%';
-
-                if (data.success) {
-                    document.getElementById('importStats').classList.remove('hidden');
-                    document.getElementById('statsImport').innerHTML = `
-                        <div class="stat-box"><div class="stat-number">${data.imported}</div><div class="stat-label">Créées</div></div>
-                        <div class="stat-box"><div class="stat-number">${data.errors_count}</div><div class="stat-label">Erreurs</div></div>
-                        <div class="stat-box"><div class="stat-number">${data.total_orders}</div><div class="stat-label">Total</div></div>
-                    `;
-
-                    let msg = `Import terminé: ${data.imported}/${data.total_orders} commandes créées`;
-                    if (data.errors_count > 0) {
-                        msg += `<br><br>⚠️ ${data.errors_count} erreur(s) - Consultez le rapport détaillé ci-dessous`;
-                    }
-                    
-                    // Afficher les détails dans la console
-                    console.log('Détails import:', data);
-                    
-                    // Afficher le rapport détaillé
-                    displayImportReport(data, odooUrl);
-                    
-                    showAlert(msg, data.errors_count === 0 ? 'success' : 'warning', 0); // 0 = ne disparaît jamais
-                } else {
-                    showAlert(`Erreur: ${data.error}`, 'error', 0);
-                    console.error('Erreur import:', data);
+                // Tableau détaillé
+                html += '<h3>📋 Détails par commande :</h3>';
+                html += '<table>';
+                html += '<tr><th>N° Commande</th><th>Date</th><th>Transporteur (nom exact)</th><th>ID Dispatch</th></tr>';
+                
+                ordersData.slice(0, 50).forEach(o => {
+                    html += `<tr>`;
+                    html += `<td>${o.number}</td>`;
+                    html += `<td>${o.date.substring(0, 10)}</td>`;
+                    html += `<td><strong>${o.dispatch}</strong></td>`;
+                    html += `<td>${o.dispatchId}</td>`;
+                    html += `</tr>`;
+                });
+                
+                if (ordersData.length > 50) {
+                    html += `<tr><td colspan="4" style="text-align: center; color: #999;">... et ${ordersData.length - 50} autres commandes</td></tr>`;
                 }
-            } catch (err) {
-                showAlert(`❌ ${err.message}`, 'error');
+                
+                html += '</table>';
+
+                // JSON brut pour copier-coller
+                html += '<h3>📄 Données JSON (pour debug technique) :</h3>';
+                html += '<div class="code" style="max-height: 300px; overflow-y: auto;">';
+                html += JSON.stringify(Array.from(transporteurs.entries()), null, 2);
+                html += '</div>';
+
+                resultsDiv.innerHTML = html;
+                resultsDiv.style.display = 'block';
+
+            } catch (error) {
+                alert(`❌ Erreur: ${error.message}`);
+                console.error(error);
             } finally {
                 btn.disabled = false;
-                btn.textContent = '🎯 Importer dans Odoo';
-                setTimeout(() => {
-                    prog.classList.add('hidden');
-                    fill.style.width = '0%';
-                }, 2000);
+                btn.textContent = '🔍 ANALYSER LES TRANSPORTEURS';
             }
         }
 
-        function downloadExcel() {
-            const data = mappedData.length > 0 ? mappedData : ordersData;
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Commandes');
-            const ts = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '_');
-            const name = mappedData.length > 0 ? `shopware_odoo_mappe_${ts}.xlsx` : `shopware_odoo_${ts}.xlsx`;
-            XLSX.writeFile(wb, name);
-            showAlert('💾 Téléchargé !', 'success');
-        }
-
-        function displayImportReport(data, odooUrl) {
-            document.getElementById('importReport').classList.remove('hidden');
-            
-            // Section succès
-            if (data.created_orders && data.created_orders.length > 0) {
-                document.getElementById('successSection').classList.remove('hidden');
-                const tbody = document.getElementById('successTableBody');
-                tbody.innerHTML = '';
-                
-                data.created_orders.forEach(order => {
-                    const productsNotFound = order.products_not_found && order.products_not_found.length > 0 
-                        ? order.products_not_found.join(', ') 
-                        : '-';
-                    
-                    const odooLink = `${odooUrl}/web#id=${order.odoo_id}&model=sale.order&view_type=form`;
-                    
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${order.order_number}</td>
-                            <td><strong>${order.odoo_id}</strong></td>
-                            <td>-</td>
-                            <td>${order.lines_count}</td>
-                            <td style="color: ${productsNotFound === '-' ? '#28a745' : '#856404'};">${productsNotFound}</td>
-                            <td><a href="${odooLink}" target="_blank" style="color: #667eea;">🔗 Ouvrir</a></td>
-                        </tr>
-                    `;
-                });
+        // Auto-remplissage si credentials dans localStorage
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('shopware_config');
+            if (saved) {
+                const config = JSON.parse(saved);
+                document.getElementById('url').value = config.url || '';
+                document.getElementById('username').value = config.username || '';
+                document.getElementById('apikey').value = config.apikey || '';
             }
-            
-            // Section erreurs
-            if (data.errors && data.errors.length > 0) {
-                document.getElementById('errorSection').classList.remove('hidden');
-                const tbody = document.getElementById('errorTableBody');
-                tbody.innerHTML = '';
-                
-                data.errors.forEach(error => {
-                    const parts = error.split(': ');
-                    const orderNum = parts[0] || 'Inconnu';
-                    const errorMsg = parts.slice(1).join(': ') || error;
-                    
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${orderNum}</strong></td>
-                            <td style="color: #721c24;">${errorMsg}</td>
-                        </tr>
-                    `;
-                });
-            }
-            
-            // Section problèmes de mapping
-            const mappingIssues = {};
-            if (data.created_orders) {
-                data.created_orders.forEach(order => {
-                    if (order.products_not_found && order.products_not_found.length > 0) {
-                        order.products_not_found.forEach(ref => {
-                            // Trouver les infos du produit dans mappedData
-                            const productInfo = mappedData.find(item => 
-                                item.product_ref_odoo === ref || item.product_ref_shopware === ref
-                            );
-                            
-                            const key = productInfo ? productInfo.product_ref_shopware : ref;
-                            
-                            if (!mappingIssues[key]) {
-                                mappingIssues[key] = {
-                                    shopware_ref: key,
-                                    odoo_ref: productInfo ? productInfo.product_ref_odoo : ref,
-                                    product_name: productInfo ? productInfo.product_name : '-',
-                                    count: 0
-                                };
-                            }
-                            mappingIssues[key].count++;
-                        });
-                    }
-                });
-            }
-            
-            if (Object.keys(mappingIssues).length > 0) {
-                document.getElementById('mappingIssuesSection').classList.remove('hidden');
-                const tbody = document.getElementById('mappingTableBody');
-                tbody.innerHTML = '';
-                
-                // Trier par nombre d'occurrences décroissant
-                const sorted = Object.values(mappingIssues).sort((a, b) => b.count - a.count);
-                
-                sorted.forEach(issue => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${issue.shopware_ref}</strong></td>
-                            <td><code>${issue.odoo_ref}</code></td>
-                            <td>${issue.product_name}</td>
-                            <td><span style="background: #ffc107; color: #000; padding: 5px 10px; border-radius: 5px; font-weight: bold;">${issue.count}</span></td>
-                        </tr>
-                    `;
-                });
-                
-                // Sauvegarder pour le téléchargement
-                window.mappingIssuesData = sorted;
-            }
-        }
-
-        function downloadMappingIssues() {
-            if (!window.mappingIssuesData || window.mappingIssuesData.length === 0) {
-                showAlert('⚠️ Aucun problème de mapping à télécharger', 'warning', 3000);
-                return;
-            }
-            
-            const data = window.mappingIssuesData.map(issue => ({
-                'Référence Shopware': issue.shopware_ref,
-                'Référence Odoo (tentée)': issue.odoo_ref,
-                'Nom produit': issue.product_name,
-                'Nombre d\'occurences': issue.count,
-                'Action requise': 'Vérifier/corriger le mapping dans la base Odoo'
-            }));
-            
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Produits non mappés');
-            
-            const ts = new Date().toISOString().slice(0, 10);
-            XLSX.writeFile(wb, `produits_non_mappes_${ts}.xlsx`);
-            showAlert('💾 Liste des produits non mappés téléchargée !', 'success', 3000);
-        }
-
-        function clearSavedCredentials() {
-            if (confirm('⚠️ Voulez-vous vraiment effacer toutes les données sauvegardées (credentials Odoo, options, etc.) ?')) {
-                localStorage.removeItem('odooUrl');
-                localStorage.removeItem('odooDb');
-                localStorage.removeItem('odooUsername');
-                localStorage.removeItem('odooApiKey');
-                localStorage.removeItem('orderTag');
-                localStorage.removeItem('defaultCarrier');
-                localStorage.removeItem('defaultWarehouse');
-                localStorage.removeItem('orderNote');
-                localStorage.removeItem('orderPrefix');
-                localStorage.removeItem('autoConfirm');
-                localStorage.removeItem('carrierMapping');
-                
-                // Vider les champs
-                document.getElementById('odooUrl').value = '';
-                document.getElementById('odooDb').value = '';
-                document.getElementById('odooUsername').value = '';
-                document.getElementById('odooApiKey').value = '';
-                document.getElementById('orderTag').value = 'E-shop Shopware';
-                document.getElementById('defaultCarrier').value = '';
-                document.getElementById('defaultWarehouse').value = '';
-                document.getElementById('orderNote').value = '';
-                document.getElementById('orderPrefix').value = 'ESHOP';
-                document.getElementById('autoConfirm').checked = true;
-                
-                // Réinitialiser le mapping
-                document.getElementById('carrierMappingContainer').innerHTML = `
-                    <div class="carrier-mapping-row" style="display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-bottom: 10px; align-items: end;">
-                        <div>
-                            <label style="font-size: 0.85em;">Nom transporteur Shopware</label>
-                            <input type="text" class="carrier-shopware-name" placeholder="Ex: Colissimo, Mondial Relay..." style="width: 100%;">
-                        </div>
-                        <div>
-                            <label style="font-size: 0.85em;">ID Méthode Odoo</label>
-                            <input type="number" class="carrier-odoo-id" placeholder="Ex: 5" style="width: 100%;">
-                        </div>
-                        <button type="button" class="btn-remove-carrier" onclick="removeCarrierMapping(this)" style="background: #dc3545; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 18px; width: 40px; height: 40px;">×</button>
-                    </div>
-                `;
-                
-                showAlert('✅ Données effacées !', 'success', 3000);
-            }
-        }
-
-        function addCarrierMapping() {
-            const container = document.getElementById('carrierMappingContainer');
-            const newRow = document.createElement('div');
-            newRow.className = 'carrier-mapping-row';
-            newRow.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-bottom: 10px; align-items: end;';
-            newRow.innerHTML = `
-                <div>
-                    <input type="text" class="carrier-shopware-name" placeholder="Ex: Colissimo, Mondial Relay..." style="width: 100%;">
-                </div>
-                <div>
-                    <input type="number" class="carrier-odoo-id" placeholder="Ex: 5" style="width: 100%;">
-                </div>
-                <button type="button" onclick="removeCarrierMapping(this)" style="background: #dc3545; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 18px; width: 40px; height: 40px;">×</button>
-            `;
-            container.appendChild(newRow);
-        }
-
-        function removeCarrierMapping(button) {
-            const container = document.getElementById('carrierMappingContainer');
-            if (container.children.length > 1) {
-                button.parentElement.remove();
-            } else {
-                showAlert('⚠️ Il faut au moins un transporteur !', 'warning', 3000);
-            }
-        }
-
-        function showCarrierHelp() {
-            document.getElementById('carrierHelpModal').classList.remove('hidden');
-            document.getElementById('carrierHelpModal').style.display = 'flex';
-        }
-
-        function hideCarrierHelp() {
-            document.getElementById('carrierHelpModal').classList.add('hidden');
-            document.getElementById('carrierHelpModal').style.display = 'none';
-        }
-
-        function getCarrierMapping() {
-            const rows = document.querySelectorAll('.carrier-mapping-row');
-            const mapping = {};
-            
-            rows.forEach(row => {
-                const shopwareName = row.querySelector('.carrier-shopware-name').value.trim();
-                const odooId = row.querySelector('.carrier-odoo-id').value.trim();
-                
-                if (shopwareName && odooId) {
-                    // Normaliser le nom (minuscules, sans accents)
-                    const normalizedName = shopwareName.toLowerCase()
-                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    mapping[normalizedName] = parseInt(odooId);
-                }
-            });
-            
-            return mapping;
-        }
-
-        function saveCarrierMapping(mapping) {
-            localStorage.setItem('carrierMapping', JSON.stringify(mapping));
-        }
-
-        function loadCarrierMapping() {
-            const saved = localStorage.getItem('carrierMapping');
-            if (!saved) return;
-            
-            try {
-                const mapping = JSON.parse(saved);
-                const container = document.getElementById('carrierMappingContainer');
-                container.innerHTML = '';
-                
-                Object.entries(mapping).forEach(([shopwareName, odooId], index) => {
-                    if (index === 0) {
-                        // Utiliser la première ligne existante
-                        const firstRow = document.querySelector('.carrier-mapping-row');
-                        if (firstRow) {
-                            firstRow.querySelector('.carrier-shopware-name').value = shopwareName;
-                            firstRow.querySelector('.carrier-odoo-id').value = odooId;
-                            container.appendChild(firstRow);
-                        }
-                    } else {
-                        // Ajouter une nouvelle ligne
-                        const newRow = document.createElement('div');
-                        newRow.className = 'carrier-mapping-row';
-                        newRow.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-bottom: 10px; align-items: end;';
-                        newRow.innerHTML = `
-                            <div>
-                                <input type="text" class="carrier-shopware-name" value="${shopwareName}" style="width: 100%;">
-                            </div>
-                            <div>
-                                <input type="number" class="carrier-odoo-id" value="${odooId}" style="width: 100%;">
-                            </div>
-                            <button type="button" onclick="removeCarrierMapping(this)" style="background: #dc3545; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 18px; width: 40px; height: 40px;">×</button>
-                        `;
-                        container.appendChild(newRow);
-                    }
-                });
-            } catch (e) {
-                console.error('Erreur chargement mapping:', e);
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            // Charger l'API URL
-            const savedApiUrl = localStorage.getItem('apiUrl');
-            if (savedApiUrl) document.getElementById('apiUrl').value = savedApiUrl;
-            
-            // Charger les credentials Odoo
-            const savedOdooUrl = localStorage.getItem('odooUrl');
-            const savedOdooDb = localStorage.getItem('odooDb');
-            const savedOdooUsername = localStorage.getItem('odooUsername');
-            const savedOdooApiKey = localStorage.getItem('odooApiKey');
-            
-            if (savedOdooUrl) document.getElementById('odooUrl').value = savedOdooUrl;
-            if (savedOdooDb) document.getElementById('odooDb').value = savedOdooDb;
-            if (savedOdooUsername) document.getElementById('odooUsername').value = savedOdooUsername;
-            if (savedOdooApiKey) document.getElementById('odooApiKey').value = savedOdooApiKey;
-            
-            // Charger les options avancées
-            const savedOrderTag = localStorage.getItem('orderTag');
-            const savedDefaultCarrier = localStorage.getItem('defaultCarrier');
-            const savedDefaultWarehouse = localStorage.getItem('defaultWarehouse');
-            const savedOrderNote = localStorage.getItem('orderNote');
-            const savedOrderPrefix = localStorage.getItem('orderPrefix');
-            const savedAutoConfirm = localStorage.getItem('autoConfirm');
-            
-            if (savedOrderTag) document.getElementById('orderTag').value = savedOrderTag;
-            if (savedDefaultCarrier) document.getElementById('defaultCarrier').value = savedDefaultCarrier;
-            if (savedDefaultWarehouse) document.getElementById('defaultWarehouse').value = savedDefaultWarehouse;
-            if (savedOrderNote) document.getElementById('orderNote').value = savedOrderNote;
-            if (savedOrderPrefix) document.getElementById('orderPrefix').value = savedOrderPrefix;
-            if (savedAutoConfirm !== null) document.getElementById('autoConfirm').checked = savedAutoConfirm === 'true';
-            
-            // Charger le mapping des transporteurs
-            loadCarrierMapping();
         });
     </script>
 </body>
